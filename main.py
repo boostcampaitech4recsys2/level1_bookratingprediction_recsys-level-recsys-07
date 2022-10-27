@@ -74,7 +74,7 @@ def main(args):
 
     ######################## TRAIN
     print(f'--------------- {args.MODEL} TRAINING ---------------')
-    model.train()
+    train_result = model.train()
 
     ######################## INFERENCE
     print(f'--------------- {args.MODEL} PREDICT ---------------')
@@ -101,6 +101,7 @@ def main(args):
     save_time = now_date + '_' + now_hour.replace(':', '')
     submission.to_csv('submit/{}_{}.csv'.format(save_time, args.MODEL), index=False)
 
+    train_result.to_csv('train_result/{}_{}.csv'.format(save_time, args.MODEL), index=False)
 
 
 if __name__ == "__main__":
