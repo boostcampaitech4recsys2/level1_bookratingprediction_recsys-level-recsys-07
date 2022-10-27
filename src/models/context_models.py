@@ -1,6 +1,7 @@
 import tqdm
 
 import numpy as np
+import pandas as pd
 
 import torch
 import torch.nn as nn
@@ -35,9 +36,13 @@ class FactorizationMachineModel:
 
     def train(self):
       # model: type, optimizer: torch.optim, train_dataloader: DataLoader, criterion: torch.nn, device: str, log_interval: int=100
+        train_result = pd.DataFrame(np.zeros((self.epochs, 2)))
+        train_result.columns = ['train_rmse', 'valid_rmse']
+        
         for epoch in range(self.epochs):
             self.model.train()
             total_loss = 0
+            
             tk0 = tqdm.tqdm(self.train_dataloader, smoothing=0, mininterval=1.0)
             for i, (fields, target) in enumerate(tk0):
                 self.model.zero_grad()
@@ -53,9 +58,22 @@ class FactorizationMachineModel:
                     tk0.set_postfix(loss=total_loss / self.log_interval)
                     total_loss = 0
 
-            rmse_score = self.predict_train()
-            print('epoch:', epoch, 'validation: rmse:', rmse_score)
+            # train_rmse
+            self.model.eval()
+            targets, predicts = list(), list()
+            with torch.no_grad():
+                for fields, target in tqdm.tqdm(self.train_dataloader, smoothing=0, mininterval=1.0):
+                    fields, target = fields.to(self.device), target.to(self.device)
+                    y = self.model(fields)
+                    targets.extend(target.tolist())
+                    predicts.extend(y.tolist())
+            rmse_score_train = rmse(targets, predicts)
 
+            rmse_score = self.predict_train()
+            print('epoch:', epoch, 'train: rmse:', rmse_score_train, 'validation: rmse:', rmse_score)
+            train_result['train_rmse'][epoch] = rmse_score_train
+            train_result['valid_rmse'][epoch] = rmse_score
+        return train_result
 
 
     def predict_train(self):
@@ -106,6 +124,9 @@ class FieldAwareFactorizationMachineModel:
 
     def train(self):
       # model: type, optimizer: torch.optim, train_dataloader: DataLoader, criterion: torch.nn, device: str, log_interval: int=100
+        train_result = pd.DataFrame(np.zeros((self.epochs, 2)))
+        train_result.columns = ['train_rmse', 'valid_rmse']
+
         for epoch in range(self.epochs):
             self.model.train()
             total_loss = 0
@@ -122,8 +143,22 @@ class FieldAwareFactorizationMachineModel:
                     tk0.set_postfix(loss=total_loss / self.log_interval)
                     total_loss = 0
 
+            # train_rmse
+            self.model.eval()
+            targets, predicts = list(), list()
+            with torch.no_grad():
+                for fields, target in tqdm.tqdm(self.train_dataloader, smoothing=0, mininterval=1.0):
+                    fields, target = fields.to(self.device), target.to(self.device)
+                    y = self.model(fields)
+                    targets.extend(target.tolist())
+                    predicts.extend(y.tolist())
+            rmse_score_train = rmse(targets, predicts)
+
             rmse_score = self.predict_train()
-            print('epoch:', epoch, 'validation: rmse:', rmse_score)
+            print('epoch:', epoch, 'train: rmse:', rmse_score_train, 'validation: rmse:', rmse_score)
+            train_result['train_rmse'][epoch] = rmse_score_train
+            train_result['valid_rmse'][epoch] = rmse_score
+        return train_result
 
 
     def predict_train(self):
