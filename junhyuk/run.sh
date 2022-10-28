@@ -1,7 +1,7 @@
-python3 main.py --EPOCHS 20 --FM_EMBED_DIM 8 --MODEL FM
+# python3 main.py --EPOCHS 20 --FM_EMBED_DIM 8 --MODEL FM
 # python3 main.py --MODEL FFM
 # python3 main.py --MODEL NCF
-# python3 main.py --EPOCHS 20 --MODEL NCF --NCF_DROPOUT 0.1 --BATCH_SIZE 1024 --LR 1e-3
+python3 main.py --EPOCHS 20 --MODEL NCF --NCF_DROPOUT 0.1 --BATCH_SIZE 1024 --LR 1e-3
 # python3 main.py --EPOCHS 6 --MODEL WDN
 # python3 main.py --EPOCHS 20 --MODEL DCN
 # python3 main.py --MODEL CNN_FM
