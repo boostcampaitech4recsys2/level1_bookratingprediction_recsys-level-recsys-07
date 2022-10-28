@@ -13,6 +13,7 @@ from src import FactorizationMachineModel, FieldAwareFactorizationMachineModel
 from src import NeuralCollaborativeFiltering, WideAndDeepModel, DeepCrossNetworkModel
 from src import CNN_FM
 from src import DeepCoNN
+from src import DeepFMModel
 
 
 def main(args):
@@ -168,8 +169,8 @@ if __name__ == "__main__":
     ############### DeepCoNN
     arg('--DFM_EMBED_DIM', type=int, default=5, help='DEEP_CONN에서 user와 item에 대한 embedding시킬 차원을 조정할 수 있습니다.')
     arg('--DFM_HIDDEN_UNITS', type=list, default=(64, 32), help='DFM에서 DNN hidden_layer의 차원을 조정할 수 있습니다.')
-    arg('--DFM_DROPOUT', type=bool, default=0, help='DEEP_CONN에서 1D conv의 출력 크기를 조정할 수 있습니다.')
-    arg('--DFM_ACTIVATION', type=str, default='relu', help='DEEP_CONN에서 1D conv의 kernel 크기를 조정할 수 있습니다.')
-    arg('--DFM_USE_BN', type=bool, default=False, help='DEEP_CONN에서 1D conv의 입력 크기를 조정할 수 있습니다.')
+    arg('--DFM_DROPOUT', type=float, default=0, help='DFM에서 Dropout rate를 조정할 수 있습니다.')
+    arg('--DFM_ACTIVATION', type=str, default='relu', help='DFM에서 activation function를 조정할 수 있습니다.')
+    arg('--DFM_USE_BN', type=bool, default=False, help='DFM에서 BN 여부를 조정할 수 있습니다.')
     args = parser.parse_args()
     main(args)

@@ -278,10 +278,10 @@ class FMLayer(nn.Module):
         '''
         Parameter
             input_dim: Entire dimension of input vector (sparse)
-            factor_dim: Factorization dimension
+            embed_dim: Factorization dimension
         '''
         super().__init__()
-        self.linear = nn.Linear(input_dim, factor_dim, bias=True) # FILL HERE : Fill in the places `None` #
+        self.linear = nn.Linear(input_dim, embed_dim, bias=True)
         
         self._initialize_weights()
         
@@ -300,7 +300,7 @@ class FMLayer(nn.Module):
             sparse_x : Same with `x_multihot` in FieldAwareFM class
                        Float tensor with size "(batch_size, self.input_dim)"
             dense_x  : Similar with `xv` in FFMLayer class. 
-                       Float tensors of size "(batch_size, num_fields, factor_dim)"
+                       Float tensors of size "(batch_size, num_fields, embed_dim)"
         
         Return
             y: Float tensor of size "(batch_size)"
@@ -393,7 +393,7 @@ class _DeepFM(nn.Module):
     '''The DeepFM architecture
     Parameter
         field_dims: List of field dimensions
-        factor_dim: Factorization dimension for dense embedding
+        embed_dim: Factorization dimension for dense embedding
         dnn_hidden_units: List of positive integer, the layer number and units in each layer
         dnn_dropout: Float value in [0,1). Fraction of the units to dropout in DNN layer
         dnn_activation: Activation function to use in DNN layer
@@ -417,12 +417,12 @@ class _DeepFM(nn.Module):
         self.encoding_dims = np.concatenate([[0], np.cumsum(field_dims)[:-1]])
         
         self.embedding = nn.ModuleList([
-            nn.Embedding(feature_size, factor_dim) for feature_size in field_dims
+            nn.Embedding(feature_size, embed_dim) for feature_size in field_dims
         ])
         
         
         self.fm = FMLayer(input_dim=self.input_dim)
-        self.dnn = DNNLayer(input_dim=(self.num_fields * factor_dim), 
+        self.dnn = DNNLayer(input_dim=(self.num_fields * embed_dim), 
                             hidden_units=dnn_hidden_units, 
                             activation=dnn_activation, 
                             dropout_rate=dnn_dropout, use_bn=dnn_use_bn)
@@ -442,7 +442,7 @@ class _DeepFM(nn.Module):
             x: Long tensor of size "(batch_size, num_fields)"
                 sparse_x : Same with `x_multihot` in FieldAwareFM class
                 dense_x  : Similar with `xv` in FFMLayer class 
-                           List of "num_fields" float tensors of size "(batch_size, factor_dim)"
+                           List of "num_fields" float tensors of size "(batch_size, embed_dim)"
         Return
             y: Float tensor of size "(batch_size)"
         '''
