@@ -20,9 +20,9 @@ def main(args):
 
     ######################## DATA LOAD
     print(f'--------------- {args.MODEL} Load Data ---------------')
-    if args.MODEL in ('FM', 'FFM'):
+    if args.MODEL in ('FM', 'FFM', 'DFM'):
         data = context_data_load(args)
-    elif args.MODEL in ('NCF', 'WDN', 'DCN'):
+    elif args.MODEL in ('NCF', 'DCN', 'WDN'):
         data = dl_data_load(args)
     elif args.MODEL == 'CNN_FM':
         data = image_data_load(args)
@@ -35,11 +35,11 @@ def main(args):
 
     ######################## Train/Valid Split
     print(f'--------------- {args.MODEL} Train/Valid Split ---------------')
-    if args.MODEL in ('FM', 'FFM'):
+    if args.MODEL in ('FM', 'FFM', 'DFM'):
         data = context_data_split(args, data)
         data = context_data_loader(args, data)
 
-    elif args.MODEL in ('NCF', 'WDN', 'DCN'):
+    elif args.MODEL in ('NCF', 'DCN', 'WDN'):
         data = dl_data_split(args, data)
         data = dl_data_loader(args, data)
 
@@ -69,6 +69,8 @@ def main(args):
         model = CNN_FM(args, data)
     elif args.MODEL=='DeepCoNN':
         model = DeepCoNN(args, data)
+    elif args.MODEL=='DFM':
+        model = DeepFMModel(args, data)
     else:
         pass
 
@@ -78,7 +80,7 @@ def main(args):
 
     ######################## INFERENCE
     print(f'--------------- {args.MODEL} PREDICT ---------------')
-    if args.MODEL in ('FM', 'FFM', 'NCF', 'WDN', 'DCN'):
+    if args.MODEL in ('FM', 'FFM', 'NCF', 'WDN', 'DCN', 'DFM'):
         predicts = model.predict(data['test_dataloader'])
     elif args.MODEL=='CNN_FM':
         predicts  = model.predict(data['test_dataloader'])
@@ -90,7 +92,7 @@ def main(args):
     ######################## SAVE PREDICT
     print(f'--------------- SAVE {args.MODEL} PREDICT ---------------')
     submission = pd.read_csv(args.DATA_PATH + 'sample_submission.csv')
-    if args.MODEL in ('FM', 'FFM', 'NCF', 'WDN', 'DCN', 'CNN_FM', 'DeepCoNN'):
+    if args.MODEL in ('FM', 'FFM', 'NCF', 'WDN', 'DCN', 'CNN_FM', 'DeepCoNN', 'DFM'):
         submission['rating'] = predicts
     else:
         pass
@@ -99,9 +101,9 @@ def main(args):
     now_date = time.strftime('%Y%m%d', now)
     now_hour = time.strftime('%X', now)
     save_time = now_date + '_' + now_hour.replace(':', '')
-    submission.to_csv('submit/{}_{}.csv'.format(save_time, args.MODEL), index=False)
+    submission.to_csv('submit/{}_{}_{}.csv'.format(save_time, args.MODEL, args.MESSAGE), index=False)
 
-    train_result.to_csv('train_result/{}_{}.csv'.format(save_time, args.MODEL), index=False)
+    train_result.to_csv('train_result/{}_{}_{}.csv'.format(save_time, args.MODEL, args.MESSAGE), index=False)
 
 
 if __name__ == "__main__":
@@ -111,8 +113,9 @@ if __name__ == "__main__":
     arg = parser.add_argument
 
     ############### BASIC OPTION
+    arg('--MESSAGE', type=str, default='', help='csv파일의 message를 작성할 수 있습니다.')
     arg('--DATA_PATH', type=str, default='data/', help='Data path를 설정할 수 있습니다.')
-    arg('--MODEL', type=str, choices=['FM', 'FFM', 'NCF', 'WDN', 'DCN', 'CNN_FM', 'DeepCoNN'],
+    arg('--MODEL', type=str, choices=['FM', 'FFM', 'NCF', 'WDN', 'DCN', 'CNN_FM', 'DeepCoNN', 'DFM'],
                                 help='학습 및 예측할 모델을 선택할 수 있습니다.')
     arg('--DATA_SHUFFLE', type=bool, default=True, help='데이터 셔플 여부를 조정할 수 있습니다.')
     arg('--TEST_SIZE', type=float, default=0.2, help='Train/Valid split 비율을 조정할 수 있습니다.')
@@ -162,5 +165,11 @@ if __name__ == "__main__":
     arg('--DEEPCONN_WORD_DIM', type=int, default=768, help='DEEP_CONN에서 1D conv의 입력 크기를 조정할 수 있습니다.')
     arg('--DEEPCONN_OUT_DIM', type=int, default=32, help='DEEP_CONN에서 1D conv의 출력 크기를 조정할 수 있습니다.')
 
+    ############### DeepCoNN
+    arg('--DFM_EMBED_DIM', type=int, default=5, help='DEEP_CONN에서 user와 item에 대한 embedding시킬 차원을 조정할 수 있습니다.')
+    arg('--DFM_HIDDEN_UNITS', type=list, default=(64, 32), help='DFM에서 DNN hidden_layer의 차원을 조정할 수 있습니다.')
+    arg('--DFM_DROPOUT', type=bool, default=0, help='DEEP_CONN에서 1D conv의 출력 크기를 조정할 수 있습니다.')
+    arg('--DFM_ACTIVATION', type=str, default='relu', help='DEEP_CONN에서 1D conv의 kernel 크기를 조정할 수 있습니다.')
+    arg('--DFM_USE_BN', type=bool, default=False, help='DEEP_CONN에서 1D conv의 입력 크기를 조정할 수 있습니다.')
     args = parser.parse_args()
     main(args)
