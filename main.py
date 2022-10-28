@@ -38,7 +38,8 @@ def main(args):
     if args.MODEL in ('FM', 'FFM'):
         data = context_data_split(args, data)
         data = context_data_loader(args, data)
-
+        import pdb;pdb.set_trace();
+        
     elif args.MODEL in ('NCF', 'WDN', 'DCN'):
         data = dl_data_split(args, data)
         data = dl_data_loader(args, data)
@@ -91,7 +92,8 @@ def main(args):
     print(f'--------------- SAVE {args.MODEL} PREDICT ---------------')
     submission = pd.read_csv(args.DATA_PATH + 'sample_submission.csv')
     if args.MODEL in ('FM', 'FFM', 'NCF', 'WDN', 'DCN', 'CNN_FM', 'DeepCoNN'):
-        submission['rating'] = predicts
+        # submission['rating'] = predicts
+        submission['rating'] = predicts+1
     else:
         pass
 
