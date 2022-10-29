@@ -8,17 +8,17 @@ from torch.utils.data import TensorDataset, DataLoader, Dataset
 def age_map(x: int) -> int:
     x = int(x)
     if x < 20:
-        return 1
+        return 0
     elif x >= 20 and x < 30:
-        return 2
+        return 1
     elif x >= 30 and x < 40:
-        return 3
+        return 2
     elif x >= 40 and x < 50:
-        return 4
+        return 3
     elif x >= 50 and x < 60:
-        return 5
+        return 4
     else:
-        return 6
+        return 5
 
 def process_context_data(users, books, ratings1, ratings2):
     # location -> location_city, location_state, location_country

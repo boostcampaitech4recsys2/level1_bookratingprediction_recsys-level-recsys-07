@@ -281,7 +281,7 @@ class FMLayer(nn.Module):
             embed_dim: Factorization dimension
         '''
         super().__init__()
-        self.linear = nn.Linear(input_dim, embed_dim, bias=True)
+        self.linear = nn.Linear(input_dim, 1, bias=True)
         
         self._initialize_weights()
         
@@ -446,11 +446,10 @@ class _DeepFM(nn.Module):
         Return
             y: Float tensor of size "(batch_size)"
         '''
-        
         sparse_x = x + x.new_tensor(self.encoding_dims).unsqueeze(0)
         sparse_x = torch.zeros(x.size(0), self.input_dim, device=x.device).scatter_(1, x, 1.)
-        dense_x = [self.embedding[f](x[...,f]) for f in range(self.num_fields)] 
-        
+        dense_x = [self.embedding[f](x[:,f]) for f in range(self.num_fields)] 
+
         y_fm = self.fm(sparse_x, torch.stack(dense_x, dim=1))
         y_dnn = self.dnn(torch.cat(dense_x, dim=1))
         
