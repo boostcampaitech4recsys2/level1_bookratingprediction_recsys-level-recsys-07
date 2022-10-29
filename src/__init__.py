@@ -8,7 +8,7 @@ from .utils import seed_everything
 
 from .models.context_models import FactorizationMachineModel, FieldAwareFactorizationMachineModel
 from .models.dl_models import NeuralCollaborativeFiltering, WideAndDeepModel, DeepCrossNetworkModel
-from .models.image_models import CNN_FM
+from ..KTH.image_models import CNN_FM
 from .models.text_models import DeepCoNN
 
 from .ensembles.ensembles import Ensemble
