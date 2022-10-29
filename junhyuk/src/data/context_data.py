@@ -20,6 +20,16 @@ def age_map(x: int) -> int:
     else:
         return 6
 
+def change_num2nan(stringVal):
+    try:
+        if any(elem.isdigit() for elem in stringVal):
+            return np.nan
+        else:
+            return stringVal
+    except:
+        # np.nan인 경우
+        return np.nan
+
 def process_context_data(users, books, ratings1, ratings2):
     # location -> location_city, location_state, location_country
     users['location'] = users['location'].str.replace(r'[^0-9a-zA-Z:,]', '')
@@ -30,6 +40,12 @@ def process_context_data(users, books, ratings1, ratings2):
 
     users = users.replace('na', np.nan)
     users = users.replace('', np.nan)
+    users = users.replace('unknown', np.nan)
+
+    # location에 숫자 있는 경우 잘못된 데이터라서 nan으로 처리해줌
+    users['location_city'] = users['location_city'].apply(lambda x: change_num2nan(x))
+    users['location_state'] = users['location_state'].apply(lambda x: change_num2nan(x))
+    users['location_country'] = users['location_country'].apply(lambda x: change_num2nan(x))
 
     # location_state, location_country 결측 대치
     modify_location = users[(users['location_country'].isna())&(users['location_city'].notnull())]['location_city'].values
@@ -43,6 +59,36 @@ def process_context_data(users, books, ratings1, ratings2):
     for location in location_list:
         users.loc[users[users['location_city']==location.split(',')[0]].index,'location_state'] = location.split(',')[1]
         users.loc[users[users['location_city']==location.split(',')[0]].index,'location_country'] = location.split(',')[2]    
+    
+    
+    
+    
+    modify_location = users[(users['location_country'].isna())&(users['location_state'].notnull())]['location_state'].values
+    location_list = []
+    for location in modify_location:
+        try:
+            right_location = users[(users['location'].str.contains(location))&(users['location_country'].notnull())]['location'].value_counts().index[0]
+            location_list.append(right_location)
+        except:
+            pass
+    for location in location_list:
+        users.loc[users[users['location_state']==location.split(',')[1]].index,'location_country'] = location.split(',')[2]
+        
+        
+    modify_location = users[(users['location_state'].isna())&(users['location_city'].notnull())&(users['location_country'].notnull())]['location_city'].values
+    location_list = []
+    for location in modify_location:
+        try:
+            right_location = users[(users['location'].str.contains(location))&(users['location_state'].notnull())]['location'].value_counts().index[0]
+            location_list.append(right_location)
+        except:
+            pass
+    for location in location_list:
+        users.loc[users[users['location_city']==location.split(',')[0]].index,'location_state'] = location.split(',')[1]
+    
+    
+    
+    
     users = users.drop(['location'], axis=1)
     
     # isbn 첫 네자리 활용하여 publisher 전처리
@@ -86,24 +132,6 @@ def process_context_data(users, books, ratings1, ratings2):
     train_df = ratings1.merge(users, on='user_id', how='left').merge(books[['isbn', 'category_high', 'publisher', 'language']], on='isbn', how='left')
     test_df = ratings2.merge(users, on='user_id', how='left').merge(books[['isbn', 'category_high', 'publisher', 'language']], on='isbn', how='left')
 
-    # # user_power
-    # tmp = train_df.groupby('user_id')['isbn'].count().reset_index()
-    # tmp.columns = list(tmp.columns)[:-1] + ['user_power']
-    # context_df = context_df.merge(tmp, how='left', on='user_id')
-    # context_df['user_power'] = context_df['user_power'].fillna(0)
-    # train_df = train_df.merge(tmp, how='left', on='user_id')
-    # test_df = test_df.merge(tmp, how='left', on='user_id')
-    # test_df['user_power'] = test_df['user_power'].fillna(0)
-
-    # # book_popularity
-    # tmp = train_df.groupby('isbn')['user_id'].count().reset_index()
-    # tmp.columns = list(tmp.columns)[:-1] + ['book_popularity']
-    # context_df = context_df.merge(tmp, how='left', on='isbn')
-    # context_df['book_popularity'] = context_df['book_popularity'].fillna(0)
-    # train_df = train_df.merge(tmp, how='left', on='isbn')
-    # test_df = test_df.merge(tmp, how='left', on='isbn')
-    # test_df['book_popularity'] = test_df['book_popularity'].fillna(0)
-    
     # 인덱싱 처리
     loc_city2idx = {v:k for k,v in enumerate(context_df['location_city'].unique())}
     loc_state2idx = {v:k for k,v in enumerate(context_df['location_state'].unique())}
@@ -125,23 +153,14 @@ def process_context_data(users, books, ratings1, ratings2):
     category2idx = {v:k for k,v in enumerate(context_df['category_high'].unique())}
     publisher2idx = {v:k for k,v in enumerate(context_df['publisher'].unique())}
     language2idx = {v:k for k,v in enumerate(context_df['language'].unique())}
-    # author2idx = {v:k for k,v in enumerate(context_df['book_author'].unique())}
-    # user_power2idx = {v:k for k,v in enumerate(context_df['user_power'].unique())}
-    # book_popularity2idx = {v:k for k,v in enumerate(context_df['book_popularity'].unique())}
 
     train_df['category_high'] = train_df['category_high'].map(category2idx)
     train_df['publisher'] = train_df['publisher'].map(publisher2idx)
     train_df['language'] = train_df['language'].map(language2idx)
-    # train_df['book_author'] = train_df['book_author'].map(author2idx)
-    # train_df['user_power'] = train_df['user_power'].map(user_power2idx)
-    # train_df['book_popularity'] = train_df['book_popularity'].map(book_popularity2idx)
 
     test_df['category_high'] = test_df['category_high'].map(category2idx)
     test_df['publisher'] = test_df['publisher'].map(publisher2idx)
     test_df['language'] = test_df['language'].map(language2idx)
-    # test_df['book_author'] = test_df['book_author'].map(author2idx)
-    # test_df['user_power'] = test_df['user_power'].map(user_power2idx)
-    # test_df['book_popularity'] = test_df['book_popularity'].map(book_popularity2idx)
 
     idx = {
         "loc_city2idx":loc_city2idx,
@@ -150,9 +169,6 @@ def process_context_data(users, books, ratings1, ratings2):
         "category2idx":category2idx,
         "publisher2idx":publisher2idx,
         "language2idx":language2idx,
-        # "author2idx":author2idx,
-        # "user_power2idx":user_power2idx,
-        # "book_popularity2idx":book_popularity2idx,
     }
     return idx, train_df, test_df
 
