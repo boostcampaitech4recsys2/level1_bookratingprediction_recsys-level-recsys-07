@@ -3,7 +3,7 @@ import tqdm
 import numpy as np
 import torch
 import torch.nn as nn
-from ..src.models._models import RMSELoss, FeaturesEmbedding, FactorizationMachine_v
+from ._models import RMSELoss, FeaturesEmbedding, FactorizationMachine_v
 
 
 class CNN_Base(nn.Module):
