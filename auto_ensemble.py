@@ -4,7 +4,8 @@ PATH = "/opt/ml/input/code/level1_bookratingprediction_recsys-level-recsys-07/su
 file_list = os.listdir(PATH)
 
 MODELS = ['FM', 'FFM', 'NCF', 'WDN', 'DCN', 'CNN_FM', 'DeepCoNN']
-essencial =["_FM.csv"]
+REQUIRE_MODELS = ["CNN_FM"]
+essencial = list(map(lambda x:f"_{x}.csv",REQUIRE_MODELS))
 ENSEMBLE_STRATEGY = "MIXED"
 
 
@@ -32,8 +33,13 @@ def get_ensemble_list(optional_files, essencial_files):
     return list(map(lambda x: offset+','.join(x),enb_list))
 
 # strategy -> WEIGHTED, MIXED
-def get_ensemble_cmd(enb_file_name): 
-    return f"python ensemble.py --ENSEMBLE_FILES {enb_file_name} --ENSEMBLE_STRATEGY {ENSEMBLE_STRATEGY}"
+def get_ensemble_cmd(model_name, strategy="WEIGHTED", weight_list = []): 
+    weight = ' '.join(list(map(str, weight_list)))
+    if strategy == "MIXED": 
+        return f"python ensemble.py --ENSEMBLE_FILES {model_name} --ENSEMBLE_STRATEGY MIXED"
+    if weight_list:
+        return f"python ensemble.py --ENSEMBLE_FILES {model_name} --ENSEMBLE_STRATEGY WEIGHTED --ENSEMBLE_WEIGHT {weight}"
+    return f"python ensemble.py --ENSEMBLE_FILES {model_name} --ENSEMBLE_STRATEGY WEIGHTED"
 
 for i in get_ensemble_list(optional_files, essencial_files):
     print(get_ensemble_cmd(i))
