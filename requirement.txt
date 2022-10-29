@@ -2,8 +2,10 @@ pandas
 scikit-learn
 nltk
 transformers
-matplotlib
+matplotlib==3.6.1
 torch
-
+timm
+seaborn
+albumentations
 
 

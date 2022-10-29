@@ -3,23 +3,37 @@ import tqdm
 import numpy as np
 import torch
 import torch.nn as nn
-from ._models import RMSELoss, FeaturesEmbedding, FactorizationMachine_v
+from ..src.models._models import RMSELoss, FeaturesEmbedding, FactorizationMachine_v
 
 
 class CNN_Base(nn.Module):
     def __init__(self, ):
         super(CNN_Base, self).__init__()
+        self.upsampling = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
         self.cnn_layer = nn.Sequential(
-                                        nn.Conv2d(3, 6, kernel_size=3, stride=2, padding=1),
-                                        nn.BatchNorm2d(6),
+                                        nn.Conv2d(1280, 512, kernel_size=3, stride=2, padding=1),
+                                        nn.BatchNorm2d(512),
                                         nn.ReLU(),
-                                        nn.MaxPool2d(kernel_size=3, stride=2),
-                                        nn.Conv2d(6, 12, kernel_size=3, stride=2, padding=1),
+                                        nn.MaxPool2d(kernel_size=3, stride=1, padding=1),
+                                        nn.Conv2d(512, 64, kernel_size=3, stride=2, padding=1),
+                                        nn.BatchNorm2d(64),
+                                        nn.ReLU(),
+                                        nn.Conv2d(64, 12, kernel_size=3, stride=2, padding=1),
                                         nn.BatchNorm2d(12),
                                         nn.ReLU(),
                                         )
+        self.efficientnet = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_efficientnet_b0', pretrained=True)
+        self.efficientnet.classifier = self.cnn_layer
+        for m in self.efficientnet.modules():
+            m.requires_grad = False
+        for m in self.efficientnet.classifier.modules():
+            m.requires_grad = True
+
     def forward(self, x):
-        x = self.cnn_layer(x)
+        # import pdb; pdb.set_trace();
+        # x = self.cnn_layer(x)
+        x = self.efficientnet(x)
+        x = self.upsampling(x)
         x = x.view(-1, 12 * 4 * 4)
         return x
 
@@ -38,6 +52,7 @@ class _CNN_FM(torch.nn.Module):
         user_isbn_vector, img_vector = x[0], x[1]
         user_isbn_feature = self.embedding(user_isbn_vector)
         img_feature = self.cnn(img_vector)
+        # import pdb; pdb.set_trace();
         feature_vector = torch.cat([
                                     user_isbn_feature.view(-1, user_isbn_feature.size(1) * user_isbn_feature.size(2)),
                                     img_feature
@@ -61,6 +76,8 @@ class CNN_FM:
         self.criterion = RMSELoss()
         self.epochs = args.EPOCHS
         self.model_name = 'image_model'
+        self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, 0.1, eta_min=0, last_epoch=- 1, verbose=False)
+
 
 
     def train(self):
@@ -93,9 +110,9 @@ class CNN_FM:
                     fields, target = [data['user_isbn_vector'].to(self.device), data['img_vector'].to(self.device)], data['label'].to(self.device)
                 y = self.model(fields)
                 loss = self.criterion(y, target.float())
-                self.model.zero_grad()
-                loss.backward()
-                self.optimizer.step()
+                # self.model.zero_grad()
+                # loss.backward()
+                # self.optimizer.step()
                 val_total_loss += loss.item()
                 val_n += 1
             if minimum_loss > (val_total_loss/val_n):
@@ -107,6 +124,7 @@ class CNN_FM:
             else:
                 loss_list.append([epoch, total_loss/n, val_total_loss/val_n, 'None'])
             tk0.set_postfix(train_loss=total_loss/n, valid_loss=val_total_loss/val_n)
+            self.scheduler.step()
 
 
     def predict(self, test_data_loader):
