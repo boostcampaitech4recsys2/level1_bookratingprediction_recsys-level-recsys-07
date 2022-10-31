@@ -204,6 +204,7 @@ class _NeuralCollaborativeFiltering(nn.Module):
                 몇 k차원으로 임베딩할 것인가
             self.embedding 통과 후: 2 * embed_dim으로 변환
             [ 68069 149570], 16
+            68069 149570 -> 20만
         """
         self.embedding = FeaturesEmbedding(field_dims, embed_dim)
         self.embed_output_dim = len(field_dims) * embed_dim
@@ -214,6 +215,7 @@ class _NeuralCollaborativeFiltering(nn.Module):
         """
         :param x: Long tensor of size ``(batch_size, num_user_fields)``
         """
+        
         # print(x.shape) torch.Size([1024, 2])
         # user & item vector -> 임베딩
         x = self.embedding(x)
