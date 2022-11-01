@@ -307,6 +307,9 @@ class DeepFMModel:
       # model: type, optimizer: torch.optim, train_dataloader: DataLoader, criterion: torch.nn, device: str, log_interval: int=100
         train_result = pd.DataFrame(np.zeros((self.epochs, 2)))
         train_result.columns = ['train_rmse', 'valid_rmse']
+        best_loss = 10**9
+        patience_limit = 3
+        patience_check = 0
         for epoch in range(self.epochs):
             self.model.train()
             total_loss = 0
@@ -338,6 +341,13 @@ class DeepFMModel:
             print('epoch:', epoch, 'train: rmse:', rmse_score_train, 'validation: rmse:', rmse_score)
             train_result['train_rmse'][epoch] = rmse_score_train
             train_result['valid_rmse'][epoch] = rmse_score
+            if rmse_score > best_loss:
+                patience_check += 1
+                if patience_check >= patience_limit:
+                    break
+            else:
+                best_loss = rmse_score
+                patience_check = 0
         return train_result
 
 

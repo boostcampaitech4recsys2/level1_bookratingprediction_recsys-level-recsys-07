@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import re
 from sklearn.model_selection import train_test_split
 import torch
 import torch.nn as nn
@@ -21,29 +22,29 @@ def age_map(x: int) -> int:
         return 5
 
 def process_context_data(users, books, ratings1, ratings2):
-    # location -> location_city, location_state, location_country
-    users['location'] = users['location'].str.replace(r'[^0-9a-zA-Z:,]', '')
+    # # location -> location_city, location_state, location_country
+    # users['location'] = users['location'].str.replace(r'[^0-9a-zA-Z:,]', '')
 
-    users['location_city'] = users['location'].apply(lambda x: x.split(',')[0].strip())
-    users['location_state'] = users['location'].apply(lambda x: x.split(',')[1].strip())
-    users['location_country'] = users['location'].apply(lambda x: x.split(',')[2].strip())
+    # users['location_city'] = users['location'].apply(lambda x: x.split(',')[0].strip())
+    # users['location_state'] = users['location'].apply(lambda x: x.split(',')[1].strip())
+    # users['location_country'] = users['location'].apply(lambda x: x.split(',')[2].strip())
 
-    users = users.replace('na', np.nan)
-    users = users.replace('', np.nan)
+    # users = users.replace('na', np.nan)
+    # users = users.replace('', np.nan)
 
-    # location_state, location_country 결측 대치
-    modify_location = users[(users['location_country'].isna())&(users['location_city'].notnull())]['location_city'].values
-    location_list = []
-    for location in modify_location:
-        try:
-            right_location = users[(users['location'].str.contains(location))&(users['location_country'].notnull())]['location'].value_counts().index[0]
-            location_list.append(right_location)
-        except:
-            pass
-    for location in location_list:
-        users.loc[users[users['location_city']==location.split(',')[0]].index,'location_state'] = location.split(',')[1]
-        users.loc[users[users['location_city']==location.split(',')[0]].index,'location_country'] = location.split(',')[2]    
-    users = users.drop(['location'], axis=1)
+    # # location_state, location_country 결측 대치
+    # modify_location = users[(users['location_country'].isna())&(users['location_city'].notnull())]['location_city'].values
+    # location_list = []
+    # for location in modify_location:
+    #     try:
+    #         right_location = users[(users['location'].str.contains(location))&(users['location_country'].notnull())]['location'].value_counts().index[0]
+    #         location_list.append(right_location)
+    #     except:
+    #         pass
+    # for location in location_list:
+    #     users.loc[users[users['location_city']==location.split(',')[0]].index,'location_state'] = location.split(',')[1]
+    #     users.loc[users[users['location_city']==location.split(',')[0]].index,'location_country'] = location.split(',')[2]    
+    # users = users.drop(['location'], axis=1)
     
     # isbn 첫 네자리 활용하여 publisher 전처리
     publisher_dict=(books['publisher'].value_counts()).to_dict()
@@ -60,6 +61,7 @@ def process_context_data(users, books, ratings1, ratings2):
             pass
         
     # category_high
+    books.loc[books[books['category'].notnull()].index, 'category'] = books[books['category'].notnull()]['category'].apply(lambda x: re.sub('[\W_]+',' ',x).strip().lower())
     books['category_high'] = books['category'].copy()
 
     books.loc[books[books['category']=='biography'].index, 'category_high'] = 'biography autobiography'
@@ -160,7 +162,8 @@ def process_context_data(users, books, ratings1, ratings2):
 def context_data_load(args):
 
     ######################## DATA LOAD
-    users = pd.read_csv(args.DATA_PATH + 'users.csv')
+    # users = pd.read_csv(args.DATA_PATH + 'users.csv')
+    users = pd.read_csv(args.DATA_PATH + 'users_preprocessed.csv')
     books = pd.read_csv(args.DATA_PATH + 'books.csv')
     train = pd.read_csv(args.DATA_PATH + 'train_ratings.csv')
     test = pd.read_csv(args.DATA_PATH + 'test_ratings.csv')
