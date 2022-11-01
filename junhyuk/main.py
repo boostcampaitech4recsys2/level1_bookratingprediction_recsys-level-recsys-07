@@ -132,7 +132,7 @@ if __name__ == "__main__":
     arg('--FFM_EMBED_DIM', type=int, default=16, help='FFM에서 embedding시킬 차원을 조정할 수 있습니다.')
 
     ############### NCF
-    arg('--NCF_EMBED_DIM', type=int, default=128, help='NCF에서 embedding시킬 차원을 조정할 수 있습니다.')
+    arg('--NCF_EMBED_DIM', type=int, default=16, help='NCF에서 embedding시킬 차원을 조정할 수 있습니다.')
     arg('--NCF_MLP_DIMS', type=list, default=(256, 256, 256, 256, 256), help='NCF에서 MLP Network의 차원을 조정할 수 있습니다.')
     
     # arg('--NCF_EMBED_DIM', type=int, default=4, help='NCF에서 embedding시킬 차원을 조정할 수 있습니다.')

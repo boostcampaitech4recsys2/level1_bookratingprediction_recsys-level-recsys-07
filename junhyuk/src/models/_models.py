@@ -187,9 +187,9 @@ class MultiLayerPerceptron(nn.Module):
         """
         :param x: Float tensor of size ``(batch_size, embed_dim)``
         """
-        identity = x
-        return self.relu(self.mlp(x) + identity)
-        # return self.mlp(x)
+        # identity = x
+        # return self.relu(self.mlp(x) + identity)
+        return self.mlp(x)
 
 class _NeuralCollaborativeFiltering(nn.Module):
 
