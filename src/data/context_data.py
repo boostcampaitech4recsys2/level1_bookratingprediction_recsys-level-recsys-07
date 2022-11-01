@@ -22,29 +22,6 @@ def age_map(x: int) -> int:
         return 5
 
 def process_context_data(users, books, ratings1, ratings2):
-    # # location -> location_city, location_state, location_country
-    # users['location'] = users['location'].str.replace(r'[^0-9a-zA-Z:,]', '')
-
-    # users['location_city'] = users['location'].apply(lambda x: x.split(',')[0].strip())
-    # users['location_state'] = users['location'].apply(lambda x: x.split(',')[1].strip())
-    # users['location_country'] = users['location'].apply(lambda x: x.split(',')[2].strip())
-
-    # users = users.replace('na', np.nan)
-    # users = users.replace('', np.nan)
-
-    # # location_state, location_country 결측 대치
-    # modify_location = users[(users['location_country'].isna())&(users['location_city'].notnull())]['location_city'].values
-    # location_list = []
-    # for location in modify_location:
-    #     try:
-    #         right_location = users[(users['location'].str.contains(location))&(users['location_country'].notnull())]['location'].value_counts().index[0]
-    #         location_list.append(right_location)
-    #     except:
-    #         pass
-    # for location in location_list:
-    #     users.loc[users[users['location_city']==location.split(',')[0]].index,'location_state'] = location.split(',')[1]
-    #     users.loc[users[users['location_city']==location.split(',')[0]].index,'location_country'] = location.split(',')[2]    
-    # users = users.drop(['location'], axis=1)
     
     # isbn 첫 네자리 활용하여 publisher 전처리
     publisher_dict=(books['publisher'].value_counts()).to_dict()
@@ -59,34 +36,13 @@ def process_context_data(users, books, ratings1, ratings2):
             books.loc[books[books['isbn'].apply(lambda x: x[:4])==number].index,'publisher'] = right_publisher
         except: 
             pass
-        
-    # category_high
-    books.loc[books[books['category'].notnull()].index, 'category'] = books[books['category'].notnull()]['category'].apply(lambda x: re.sub('[\W_]+',' ',x).strip().lower())
-    books['category_high'] = books['category'].copy()
-
-    books.loc[books[books['category']=='biography'].index, 'category_high'] = 'biography autobiography'
-    books.loc[books[books['category']=='autobiography'].index,'category_high'] = 'biography autobiography'
-    books.loc[books[books['category'].str.contains('history',na=False)].index,'category_high'] = 'history'
-    
-    categories = ['garden','crafts','physics','adventure','music','fiction','nonfiction','science','science fiction','social','homicide',
-    'sociology','disease','religion','christian','philosophy','psycholog','mathemat','agricult','environmental',
-    'business','poetry','drama','literary','travel','motion picture','children','cook','literature','electronic',
-    'humor','animal','bird','photograph','computer','house','ecology','family','architect','camp','criminal','language','india']
-    for category in categories:
-        books.loc[books[books['category'].str.contains(category,na=False)].index,'category_high'] = category
-    
-    category_high_df = pd.DataFrame(books['category_high'].value_counts()).reset_index()
-    category_high_df.columns = ['category','count']
-    others_list = category_high_df[category_high_df['count']<5]['category'].values
-    books.loc[books[books['category_high'].isin(others_list)].index, 'category_high']='others'
-    books.drop('category', axis=1, inplace=True)
 
     ratings = pd.concat([ratings1, ratings2]).reset_index(drop=True)
 
     # 인덱싱 처리된 데이터 조인
-    context_df = ratings.merge(users, on='user_id', how='left').merge(books[['isbn', 'category_high', 'publisher', 'language']], on='isbn', how='left')
-    train_df = ratings1.merge(users, on='user_id', how='left').merge(books[['isbn', 'category_high', 'publisher', 'language']], on='isbn', how='left')
-    test_df = ratings2.merge(users, on='user_id', how='left').merge(books[['isbn', 'category_high', 'publisher', 'language']], on='isbn', how='left')
+    context_df = ratings.merge(users, on='user_id', how='left').merge(books[['isbn', 'category_high', 'new_language','publisher']], on='isbn', how='left')
+    train_df = ratings1.merge(users, on='user_id', how='left').merge(books[['isbn', 'category_high', 'new_language','publisher']], on='isbn', how='left')
+    test_df = ratings2.merge(users, on='user_id', how='left').merge(books[['isbn', 'category_high', 'new_language','publisher']], on='isbn', how='left')
 
     # # user_power
     # tmp = train_df.groupby('user_id')['isbn'].count().reset_index()
@@ -126,22 +82,25 @@ def process_context_data(users, books, ratings1, ratings2):
     # book 파트 인덱싱
     category2idx = {v:k for k,v in enumerate(context_df['category_high'].unique())}
     publisher2idx = {v:k for k,v in enumerate(context_df['publisher'].unique())}
-    language2idx = {v:k for k,v in enumerate(context_df['language'].unique())}
-    # author2idx = {v:k for k,v in enumerate(context_df['book_author'].unique())}
+    language2idx = {v:k for k,v in enumerate(context_df['new_language'].unique())}
+    # author2idx = {v:k for k,v in enumerate(context_df['book_author_over10'].unique())}
+    # yearofpublication2idx = {v:k for k,v in enumerate(context_df['year_of_publication'].unique())}
     # user_power2idx = {v:k for k,v in enumerate(context_df['user_power'].unique())}
     # book_popularity2idx = {v:k for k,v in enumerate(context_df['book_popularity'].unique())}
 
     train_df['category_high'] = train_df['category_high'].map(category2idx)
     train_df['publisher'] = train_df['publisher'].map(publisher2idx)
-    train_df['language'] = train_df['language'].map(language2idx)
-    # train_df['book_author'] = train_df['book_author'].map(author2idx)
+    train_df['new_language'] = train_df['new_language'].map(language2idx)
+    # train_df['book_author_over10'] = train_df['book_author_over10'].map(author2idx)
+    # train_df['year_of_publication'] = train_df['year_of_publication'].map(yearofpublication2idx)
     # train_df['user_power'] = train_df['user_power'].map(user_power2idx)
     # train_df['book_popularity'] = train_df['book_popularity'].map(book_popularity2idx)
 
     test_df['category_high'] = test_df['category_high'].map(category2idx)
     test_df['publisher'] = test_df['publisher'].map(publisher2idx)
-    test_df['language'] = test_df['language'].map(language2idx)
-    # test_df['book_author'] = test_df['book_author'].map(author2idx)
+    test_df['new_language'] = test_df['new_language'].map(language2idx)
+    # test_df['book_author_over10'] = test_df['book_author_over10'].map(author2idx)
+    # test_df['year_of_publication'] = test_df['year_of_publication'].map(yearofpublication2idx)
     # test_df['user_power'] = test_df['user_power'].map(user_power2idx)
     # test_df['book_popularity'] = test_df['book_popularity'].map(book_popularity2idx)
 
@@ -153,6 +112,7 @@ def process_context_data(users, books, ratings1, ratings2):
         "publisher2idx":publisher2idx,
         "language2idx":language2idx,
         # "author2idx":author2idx,
+        # "yearofpublication2idx":yearofpublication2idx,
         # "user_power2idx":user_power2idx,
         # "book_popularity2idx":book_popularity2idx,
     }
@@ -164,7 +124,7 @@ def context_data_load(args):
     ######################## DATA LOAD
     # users = pd.read_csv(args.DATA_PATH + 'users.csv')
     users = pd.read_csv(args.DATA_PATH + 'users_preprocessed.csv')
-    books = pd.read_csv(args.DATA_PATH + 'books.csv')
+    books = pd.read_csv(args.DATA_PATH + 'books_merged.csv')
     train = pd.read_csv(args.DATA_PATH + 'train_ratings.csv')
     test = pd.read_csv(args.DATA_PATH + 'test_ratings.csv')
     sub = pd.read_csv(args.DATA_PATH + 'sample_submission.csv')
@@ -190,8 +150,13 @@ def context_data_load(args):
 
     idx, context_train, context_test = process_context_data(users, books, train, test)
     field_dims = np.array([len(user2idx), len(isbn2idx),
-                            6, len(idx['loc_city2idx']), len(idx['loc_state2idx']), len(idx['loc_country2idx']),
-                            len(idx['category2idx']), len(idx['publisher2idx']), len(idx['language2idx'])], dtype=np.uint32)
+                            6, len(idx['loc_city2idx']), 
+                            len(idx['loc_state2idx']), len(idx['loc_country2idx']),
+                            len(idx['category2idx']), len(idx['language2idx']),
+                            len(idx['publisher2idx'])
+                            # len(idx['author2idx'])
+                            # len(idx['yearofpublication2idx'])
+                            ], dtype=np.uint32)
 
     data = {
             'train':context_train,
