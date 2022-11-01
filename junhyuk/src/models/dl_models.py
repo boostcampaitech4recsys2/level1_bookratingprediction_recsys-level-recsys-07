@@ -123,8 +123,7 @@ class NeuralCollaborativeFiltering:
             valid_loss_list.append(valid_loss)
             valid_acc_list.append(valid_rmse_score)
             
-            now_time = time.time()
-            elapsed = now_time - start_time
+            elapsed = time.time() - start_time
             
             if epoch % print_iter == 0:
                 print(f"Epoch: {epoch}, elapsed: {elapsed}")

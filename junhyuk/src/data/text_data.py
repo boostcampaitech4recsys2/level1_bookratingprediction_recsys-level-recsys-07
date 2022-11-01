@@ -26,16 +26,28 @@ def summary_merge(df, user_id, max_summary):
 
 def text_to_vector(text, tokenizer, model, device):
     for sent in tokenize.sent_tokenize(text):
+        # breakpoint()
         text_ = "[CLS] " + sent + " [SEP]"
-        tokenized = tokenizer.tokenize(text_)
+        # breakpoint()
+        # tokenized = tokenizer.tokenize(text_)
+        tokenized = tokenizer.encode(text_, padding=True, truncation=True,max_length=512, add_special_tokens = True)
+        # breakpoint()
         indexed = tokenizer.convert_tokens_to_ids(tokenized)
+        # breakpoint()
         segments_idx = [1] * len(tokenized)
+        # breakpoint()
         token_tensor = torch.tensor([indexed])
+        # breakpoint()
         sgments_tensor = torch.tensor([segments_idx])
+        # breakpoint()
         with torch.no_grad():
+            if token_tensor.shape[1] == 661:
+                breakpoint()
             outputs = model(token_tensor.to(device), sgments_tensor.to(device))
+            # breakpoint()
             encode_layers = outputs[0]
             sentence_embedding = torch.mean(encode_layers[0], dim=0)
+        # breakpoint()
     return sentence_embedding.cpu().detach().numpy()
 
 
@@ -154,7 +166,7 @@ class Text_Dataset(Dataset):
 def text_data_load(args):
 
     users = pd.read_csv(args.DATA_PATH + 'users.csv')
-    books = pd.read_csv(args.DATA_PATH + 'books.csv')
+    books = pd.read_csv(args.DATA_PATH + 'summary_preprocessed.csv')
     train = pd.read_csv(args.DATA_PATH + 'train_ratings.csv')
     test = pd.read_csv(args.DATA_PATH + 'test_ratings.csv')
     sub = pd.read_csv(args.DATA_PATH + 'sample_submission.csv')
