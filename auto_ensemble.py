@@ -4,7 +4,7 @@ PATH = "/opt/ml/input/code/level1_bookratingprediction_recsys-level-recsys-07/su
 file_list = os.listdir(PATH)
 
 MODELS = ['FM', 'FFM', 'NCF', 'WDN', 'DCN', 'CNN_FM', 'DeepCoNN']
-REQUIRE_MODELS = ["CNN_FM"]
+REQUIRE_MODELS = ["NCF","FM","CNN_FM"]
 essencial = list(map(lambda x:f"_{x}.csv",REQUIRE_MODELS))
 ENSEMBLE_STRATEGY = "MIXED"
 
