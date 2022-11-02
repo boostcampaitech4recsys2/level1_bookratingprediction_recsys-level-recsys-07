@@ -100,6 +100,12 @@ def dl_data_load(args):
     field_dims = np.array([len(user2idx), len(isbn2idx), 6], dtype=np.uint32)
     for idx_name in idx.keys():
         field_dims = np.append(field_dims, len(idx[idx_name]))
+        
+    field_name_dim_dict = {'user_id':np.array((0, ), dtype=np.long),
+                           'isbn':np.array((1, ), dtype=np.long),
+                           'age': np.array((2, ), dtype=np.long)}
+    for i, idx_name in enumerate(idx.keys()):
+        field_name_dim_dict[idx_name] = np.array((i + 3, ), dtype=np.long)
 
     data = {
             'train':context_train,
@@ -112,6 +118,7 @@ def dl_data_load(args):
             'idx2isbn':idx2isbn,
             'user2idx':user2idx,
             'isbn2idx':isbn2idx,
+            'field_name_dim_dict':field_name_dim_dict
             }
 
     return data
