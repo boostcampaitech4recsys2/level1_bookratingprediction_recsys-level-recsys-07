@@ -126,6 +126,8 @@ def books2idx(context_df, train_df, test_df, features_name:list, feature2idx:dic
         raise Exception(f"Error at {inspect.currentframe().f_code.co_name}\nnot pd.DataFrame")
     else:
         for feature_name in features_name:
+            if feature_name == 'isbn' or feature_name == 'user_id':
+                continue
             idx_name = feature_name + '2idx'
             feature2idx[idx_name] = {v:k for k,v in enumerate(context_df[feature_name].unique())}
             train_df[feature_name] = train_df[feature_name].map(feature2idx[idx_name])

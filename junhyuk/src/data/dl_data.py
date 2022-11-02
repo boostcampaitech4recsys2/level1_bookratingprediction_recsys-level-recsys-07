@@ -52,6 +52,7 @@ def process_context_data(users, books, ratings1, ratings2, features_name:list):
 
     idx = dict()
     # users 인덱싱
+    # 3개 추가
     idx, train_df, test_df = users2idx(context_df, train_df, test_df, idx)
     
     # books 인덱싱

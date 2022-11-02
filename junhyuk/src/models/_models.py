@@ -176,7 +176,7 @@ class MultiLayerPerceptron(nn.Module):
             layers.append(torch.nn.Linear(input_dim, embed_dim))
             layers.append(torch.nn.BatchNorm1d(embed_dim))
             layers.append(torch.nn.ReLU())
-            # layers.append(torch.nn.Dropout(p=dropout))
+            layers.append(torch.nn.Dropout(p=dropout))
             input_dim = embed_dim
         if output_layer:
             layers.append(torch.nn.Linear(input_dim, 1))
@@ -236,7 +236,10 @@ class _NeuralCollaborativeFiltering(nn.Module):
         # x.view(-1, self.embed_output_dim).shape: torch.Size([1024, 32])
         # self.mlp(x.view(-1, self.embed_output_dim)).shape: ([1024, (2 + context_feature 수)56])
         # breakpoint()
-        x = self.mlp(x.view(-1, self.embed_output_dim))
+        # shape '[-1, 176]' is invalid for input of size 163840
+        x = x.view(-1, self.embed_output_dim)
+        # breakpoint()
+        x = self.mlp(x)
         # breakpoint()
         x = torch.cat([gmf, x], dim=1)
         x = self.fc(x).squeeze(1)

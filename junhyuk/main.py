@@ -99,7 +99,7 @@ def main(args):
     now_date = time.strftime('%Y%m%d', now)
     now_hour = time.strftime('%X', now)
     save_time = now_date + '_' + now_hour.replace(':', '')
-    submission.to_csv('submit/{}_{}.csv'.format(save_time, args.MODEL), index=False)
+    submission.to_csv('submit/{}_{}_kjh.csv'.format(save_time, args.MODEL), index=False)
 
 
 
@@ -117,10 +117,21 @@ if __name__ == "__main__":
     arg('--SEED', type=int, default=42, help='seed 값을 조정할 수 있습니다.')
     
     ############### ADD CONTEXT ###############
-    arg('--ADD_CONTEXT', type=list, default=['isbn', 'category_high', 'publisher', 'new_language', 'book_author_over10'], help='context 선택이 가능합니다.')
+    # arg('--ADD_CONTEXT', type=list, default=['isbn', 'category_high', 'publisher', 'new_language','book_author_over10', 'book_author_over100'], help='context 선택이 가능합니다.')
+    """
+    books_merged:
+        dataframe
+        isbn,book_title,year_of_publication,publisher,img_url,
+        language,summary,img_path,category_high,book_author,category,
+        new_language,remove_country_code,book_author_over3,book_author_over5,
+        book_author_over10,book_author_over50,book_author_over100
+    """
+    
+    arg('--ADD_CONTEXT', type=list, default=['isbn', 'category_high', 'new_language','book_author_over50','book_author_over10', 'book_author_over100','publisher',\
+        'year_of_publication','remove_country_code'], help='context 선택이 가능합니다.')
     
     ############### TRAINING OPTION
-    arg('--BATCH_SIZE', type=int, default=1024, help='Batch size를 조정할 수 있습니다.')
+    arg('--BATCH_SIZE', type=int, default=64, help='Batch size를 조정할 수 있습니다.')
     arg('--EPOCHS', type=int, default=10, help='Epoch 수를 조정할 수 있습니다.')
     arg('--LR', type=float, default=1e-3, help='Learning Rate를 조정할 수 있습니다.')
     arg('--WEIGHT_DECAY', type=float, default=1e-6, help='Adam optimizer에서 정규화에 사용하는 값을 조정할 수 있습니다.')
@@ -141,7 +152,7 @@ if __name__ == "__main__":
     # arg('--NCF_EMBED_DIM', type=int, default=4, help='NCF에서 embedding시킬 차원을 조정할 수 있습니다.')
     # arg('--NCF_MLP_DIMS', type=list, default=(8,8,8,8,8,8,8,8,8,8,8), help='NCF에서 MLP Network의 차원을 조정할 수 있습니다.')
     
-    arg('--NCF_DROPOUT', type=float, default=0.2, help='NCF에서 Dropout rate를 조정할 수 있습니다.')
+    arg('--NCF_DROPOUT', type=float, default=0.1, help='NCF에서 Dropout rate를 조정할 수 있습니다.')
 
     ############### WDN
     arg('--WDN_EMBED_DIM', type=int, default=16, help='WDN에서 embedding시킬 차원을 조정할 수 있습니다.')
