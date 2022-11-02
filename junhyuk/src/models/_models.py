@@ -176,7 +176,7 @@ class MultiLayerPerceptron(nn.Module):
             layers.append(torch.nn.Linear(input_dim, embed_dim))
             layers.append(torch.nn.BatchNorm1d(embed_dim))
             layers.append(torch.nn.ReLU())
-            # layers.append(torch.nn.Dropout(p=dropout))
+            layers.append(torch.nn.Dropout(p=dropout))
             input_dim = embed_dim
         if output_layer:
             layers.append(torch.nn.Linear(input_dim, 1))
@@ -193,10 +193,9 @@ class MultiLayerPerceptron(nn.Module):
 
 class _NeuralCollaborativeFiltering(nn.Module):
 
-    def __init__(self, field_dims, user_field_idx, item_field_idx, embed_dim, mlp_dims, dropout):
+    def __init__(self, field_dims, field_idx_dict, embed_dim, mlp_dims, dropout):
         super().__init__()
-        self.user_field_idx = user_field_idx
-        self.item_field_idx = item_field_idx
+        self.field_idx_dict = field_idx_dict
         """
         FeaturesEmbedding(field_dims, embed_dim)
             field_dims: [유저 전체 수, 아이템 전체 수] == np.array([len(user2idx), len(isbn2idx)], dtype=np.uint32)
@@ -216,19 +215,31 @@ class _NeuralCollaborativeFiltering(nn.Module):
         :param x: Long tensor of size ``(batch_size, num_user_fields)``
         """
         
-        # print(x.shape) torch.Size([1024, 2])
+        # print(x.shape) torch.Size([1024, (2 + context_feature 수)])
         # user & item vector -> 임베딩
         x = self.embedding(x)
-        # print(x.shape) torch.Size([1024, 2, 16])
-        user_x = x[:, self.user_field_idx].squeeze(1)
-        item_x = x[:, self.item_field_idx].squeeze(1)
-        gmf = user_x * item_x
+        # print(x.shape) torch.Size([1024, (2 + context_feature 수), 16])
+        
+        # user_x = x[:, self.user_field_idx].squeeze(1)
+        # item_x = x[:, self.item_field_idx].squeeze(1)
+        # gmf = user_x * item_x
+        
+        gmf = x[:, self.field_idx_dict['user_id']].squeeze(1)
+        for field_name, field_idx in self.field_idx_dict.items():
+            if field_name == 'user_id':
+                continue
+            tmp = x[:, self.field_idx_dict[field_name]].squeeze(1)
+            gmf = (gmf * tmp)
+        
         # MLP 통과
-        # x.shape: torch.Size([1024, 2, 16])
+        # x.shape: torch.Size([1024, (2 + context_feature 수), 16])
         # x.view(-1, self.embed_output_dim).shape: torch.Size([1024, 32])
-        # self.mlp(x.view(-1, self.embed_output_dim)).shape: ([1024, 256])
+        # self.mlp(x.view(-1, self.embed_output_dim)).shape: ([1024, (2 + context_feature 수)56])
         # breakpoint()
-        x = self.mlp(x.view(-1, self.embed_output_dim))
+        # shape '[-1, 176]' is invalid for input of size 163840
+        x = x.view(-1, self.embed_output_dim)
+        # breakpoint()
+        x = self.mlp(x)
         # breakpoint()
         x = torch.cat([gmf, x], dim=1)
         x = self.fc(x).squeeze(1)

@@ -5,6 +5,8 @@ import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader, Dataset
 
+from preprocess_data import *
+
 def age_map(x: int) -> int:
     x = int(x)
     if x < 20:
@@ -19,111 +21,96 @@ def age_map(x: int) -> int:
         return 5
     else:
         return 6
+    
+def process_context_data(users, books, ratings1, ratings2, features_name:list):
+    # publisher 전처리
+    # books = preprocess_publisher(books)
+    # age, location 전처리
+    users = preprocess_location(preprocess_age(users))
+    ratings = pd.concat([ratings1, ratings2]).reset_index(drop=True)
+
+    print(type(features_name))
+    
+    # 인덱싱 처리된 데이터 조인
+    """
+    users_preprocessed:
+        dataframe
+        user_id,age,location_city,location_state,location_country
+        
+    books_merged:
+        dataframe
+        isbn,book_title,year_of_publication,publisher,img_url,
+        language,summary,img_path,category_high,book_author,category,
+        new_language,remove_country_code,book_author_over3,book_author_over5,
+        book_author_over10,book_author_over50,book_author_over100
+    """
+    # user_id, isbn, age, city, state, country, category_high, publisher_4_digit, language, author_10
+    # context_df = ratings.merge(users, on='user_id', how='left').merge(books[features_name], on='isbn', how='left')
+    context_df = ratings.merge(users, on='user_id', how='left').merge(books[features_name], on='isbn', how='left')
+    train_df = ratings1.merge(users, on='user_id', how='left').merge(books[features_name], on='isbn', how='left')
+    test_df = ratings2.merge(users, on='user_id', how='left').merge(books[features_name], on='isbn', how='left')
+
+    idx = dict()
+    # users 인덱싱
+    # 3개 추가
+    idx, train_df, test_df = users2idx(context_df, train_df, test_df, idx)
+    
+    # books 인덱싱
+    idx, train_df, test_df = books2idx(context_df, train_df, test_df, features_name, idx)
+    
+    return idx, train_df, test_df
 
 def dl_data_load(args):
-
-    ######################## DATA LOAD
+    # user_id, isbn, age, city, state, country, category_high, publisher_4_digit, language, author_10
+    features_name = args.ADD_CONTEXT
+    
+    users = pd.read_csv(args.DATA_PATH + 'users_preprocessed.csv')
     """
-    users:
+    books_merged:
         dataframe
-        user_id, location, age
+        isbn,book_title,year_of_publication,publisher,img_url,
+        language,summary,img_path,category_high,book_author,category,
+        new_language,remove_country_code,book_author_over3,book_author_over5,
+        book_author_over10,book_author_over50,book_author_over100
     """
-    users = pd.read_csv(args.DATA_PATH + 'users.csv')
-    # users = users.drop(['location'], axis=1)
-    """
-    books:
-        dataframe
-        isbn, book_title, book_author, year_of_publication, publisher, img_url, language, category, summary, img_path
-    """
-    books = pd.read_csv(args.DATA_PATH + 'books.csv')
-    """
-    train:
-        user_id, isbn, rating
-    """
+    books = pd.read_csv(args.DATA_PATH + 'books_merged.csv')
     train = pd.read_csv(args.DATA_PATH + 'train_ratings.csv')
     test = pd.read_csv(args.DATA_PATH + 'test_ratings.csv')
     sub = pd.read_csv(args.DATA_PATH + 'sample_submission.csv')
-    
-    # if args.MODEL == 'NCF':
-    # # age 전처리
-    #     train = pd.merge(left=train, right=users, how='inner', on='user_id')
-    #     train['age'] = train['age'].fillna(int(train['age'].mean()))
-    #     # age 고유 개수들에 비해 EMBED_DIM이 크면, index 범위 넘은 에러남 -> 아닌 것 같음
-    #     train['age'] = train['age'].apply(age_map)
-    #     test = pd.merge(left=test, right=users, how='inner', on='user_id')
-    #     test['age'] = test['age'].fillna(int(test['age'].mean()))
-    #     test['age'] = test['age'].apply(age_map)
-        
-    #     sub = pd.merge(left=sub, right=users, how='inner', on='user_id')
-    #     sub['age'] = sub['age'].fillna(int(sub['age'].mean()))
-    #     sub['age'] = sub['age'].apply(age_map)
 
     # 모든 유저
     ids = pd.concat([train['user_id'], sub['user_id']]).unique()
     # 모든 책
     isbns = pd.concat([train['isbn'], sub['isbn']]).unique()
-    # # 모든 연령
-    # ages = pd.concat([train['age'], test['age']]).unique()
-    """
-    dict 생성
-        key: idx
-        value: user_id
-    """
     idx2user = {idx:id for idx, id in enumerate(ids)}
-    """
-    dict 생성
-        key: idx
-        value: item_id
-    """
     idx2isbn = {idx:isbn for idx, isbn in enumerate(isbns)}
-    
-    # idx2age = {idx+1:age for idx, age in enumerate(ages)}
-
-    """
-    dict 생성
-        key: user_id
-        value: idx
-    """
     user2idx = {id:idx for idx, id in idx2user.items()}
-    """
-    dict 생성
-        key: item_id
-        value: idx
-    """
     isbn2idx = {isbn:idx for idx, isbn in idx2isbn.items()}
     
-    # age2idx = {age:idx+1 for idx, age in enumerate(ages)}
-
-    # 오 이런게 가능한가보네
     train['user_id'] = train['user_id'].map(user2idx)
     sub['user_id'] = sub['user_id'].map(user2idx)
     test['user_id'] = test['user_id'].map(user2idx)
+    users['user_id'] = users['user_id'].map(user2idx)
 
     train['isbn'] = train['isbn'].map(isbn2idx)
     sub['isbn'] = sub['isbn'].map(isbn2idx)
     test['isbn'] = test['isbn'].map(isbn2idx)
+    books['isbn'] = books['isbn'].map(isbn2idx)
     
-    # train['age'] = train['age'].map(isbn2idx)
-    # sub['age'] = sub['age'].map(isbn2idx)
-    # test['age'] = test['age'].map(isbn2idx)
-
-    if args.MODEL == 'NCF':
-        """
-        field_dims:
-            [유저 전체 수, 아이템 전체 수, 연령대==6]
-        """
-        field_dims = np.array([len(user2idx), len(isbn2idx)], dtype=np.uint32)
-    else:
-        """
-        field_dims:
-            [유저 전체 수, 아이템 전체 수]
-        """
-        field_dims = np.array([len(user2idx), len(isbn2idx)], dtype=np.uint32)
+    idx, context_train, context_test = process_context_data(users, books, train, test, features_name)
+    field_dims = np.array([len(user2idx), len(isbn2idx), 6], dtype=np.uint32)
+    for idx_name in idx.keys():
+        field_dims = np.append(field_dims, len(idx[idx_name]))
+        
+    field_name_dim_dict = {'user_id':np.array((0, ), dtype=np.long),
+                           'isbn':np.array((1, ), dtype=np.long),
+                           'age': np.array((2, ), dtype=np.long)}
+    for i, idx_name in enumerate(idx.keys()):
+        field_name_dim_dict[idx_name] = np.array((i + 3, ), dtype=np.long)
 
     data = {
-            # 'train': user_id, isbn, age, rating
-            'train':train,
-            'test':test.drop(['rating'], axis=1),
+            'train':context_train,
+            'test':context_test.drop(['rating'], axis=1),
             'field_dims':field_dims,
             'users':users,
             'books':books,
@@ -132,8 +119,8 @@ def dl_data_load(args):
             'idx2isbn':idx2isbn,
             'user2idx':user2idx,
             'isbn2idx':isbn2idx,
+            'field_name_dim_dict':field_name_dim_dict
             }
-
 
     return data
 
@@ -145,9 +132,11 @@ def dl_data_split(args, data):
                                                         random_state=args.SEED,
                                                         shuffle=True
                                                         )
-    # X_train: user_id, isbn, age
-    # X_valid: ratings
     data['X_train'], data['X_valid'], data['y_train'], data['y_valid'] = X_train, X_valid, y_train, y_valid
+    """
+    data['X_train']:
+        user_id, isbn, age, city, state, country, feature_names....
+    """
     return data
 
 def dl_data_loader(args, data):
@@ -159,9 +148,6 @@ def dl_data_loader(args, data):
     valid_dataloader = DataLoader(valid_dataset, batch_size=args.BATCH_SIZE, shuffle=args.DATA_SHUFFLE, drop_last=False)
     test_dataloader = DataLoader(test_dataset, batch_size=args.BATCH_SIZE, shuffle=False)
 
-    # 'train_dataloader':
-        # X_train: user_id, isbn, age
-        # X_valid: ratings
     data['train_dataloader'], data['valid_dataloader'], data['test_dataloader'] = train_dataloader, valid_dataloader, test_dataloader
 
     return data
