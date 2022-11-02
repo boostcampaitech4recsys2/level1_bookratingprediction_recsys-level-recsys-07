@@ -127,11 +127,11 @@ if __name__ == "__main__":
         book_author_over10,book_author_over50,book_author_over100
     """
     
-    arg('--ADD_CONTEXT', type=list, default=['isbn', 'category_high', 'new_language','book_author_over50','book_author_over10', 'book_author_over100','publisher',\
+    arg('--ADD_CONTEXT', type=list, default=['isbn', 'category_high', 'new_language','book_author_over50','book_author_over10', 'book_author_over100','book_author_over3','book_author_over5','publisher',\
         'year_of_publication','remove_country_code'], help='context 선택이 가능합니다.')
     
     ############### TRAINING OPTION
-    arg('--BATCH_SIZE', type=int, default=1024, help='Batch size를 조정할 수 있습니다.')
+    arg('--BATCH_SIZE', type=int, default=64, help='Batch size를 조정할 수 있습니다.')
     arg('--EPOCHS', type=int, default=10, help='Epoch 수를 조정할 수 있습니다.')
     arg('--LR', type=float, default=1e-3, help='Learning Rate를 조정할 수 있습니다.')
     arg('--WEIGHT_DECAY', type=float, default=1e-6, help='Adam optimizer에서 정규화에 사용하는 값을 조정할 수 있습니다.')
@@ -150,7 +150,7 @@ if __name__ == "__main__":
     arg('--NCF_MLP_DIMS', type=list, default=(256, 256, 256, 256, 256), help='NCF에서 MLP Network의 차원을 조정할 수 있습니다.')
     
     # arg('--NCF_EMBED_DIM', type=int, default=4, help='NCF에서 embedding시킬 차원을 조정할 수 있습니다.')
-    # arg('--NCF_MLP_DIMS', type=list, default=(8,8,8,8,8,8,8,8,8,8,8), help='NCF에서 MLP Network의 차원을 조정할 수 있습니다.')
+    # arg('--NCF_MLP_DIMS', type=list, default=(8,8,8,8,), help='NCF에서 MLP Network의 차원을 조정할 수 있습니다.')
     
     arg('--NCF_DROPOUT', type=float, default=0.1, help='NCF에서 Dropout rate를 조정할 수 있습니다.')
 

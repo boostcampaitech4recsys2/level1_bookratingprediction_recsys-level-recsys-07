@@ -188,14 +188,14 @@ class MultiLayerPerceptron(nn.Module):
         """
         :param x: Float tensor of size ``(batch_size, embed_dim)``
         """
-        identity = x
-        breakpoint()
-        return self.relu(self.mlp(x) + identity.view(-1, self.last_mlp_layer_size))
-        # return self.mlp(x)
+        # identity = x
+        # breakpoint()
+        # return self.relu(self.mlp(x) + identity.view(-1, self.last_mlp_layer_size))
+        return self.mlp(x)
 
 class _NeuralCollaborativeFiltering(nn.Module):
 
-    def __init__(self, field_dims, field_idx_dict, embed_dim, mlp_dims, dropout):
+    def __init__(self, field_dims, field_idx_dict, embed_dim, mlp_dims, dropout, batch_size):
         super().__init__()
         self.field_idx_dict = field_idx_dict
         """
@@ -211,6 +211,7 @@ class _NeuralCollaborativeFiltering(nn.Module):
         self.embed_output_dim = len(field_dims) * embed_dim
         self.mlp = MultiLayerPerceptron(self.embed_output_dim, mlp_dims, dropout, output_layer=False)
         self.fc = torch.nn.Linear(mlp_dims[-1] + embed_dim, 1)
+        self.batch_size = batch_size
 
     def forward(self, x):
         """
