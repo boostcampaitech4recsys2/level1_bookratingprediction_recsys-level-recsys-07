@@ -8,6 +8,8 @@ from src.data import context_data_load, context_data_split, context_data_loader
 from src.data import dl_data_load, dl_data_split, dl_data_loader
 from src.data import image_data_load, image_data_split, image_data_loader
 from src.data import text_data_load, text_data_split, text_data_loader
+from src.data import csr_data_load, csr_data_split, csr_data_loader
+
 
 from src import FactorizationMachineModel, FieldAwareFactorizationMachineModel
 from src import NeuralCollaborativeFiltering, WideAndDeepModel, DeepCrossNetworkModel
@@ -50,6 +52,9 @@ def main(args):
     elif args.MODEL=='DeepCoNN':
         data = text_data_split(args, data)
         data = text_data_loader(args, data)
+    # elif args.MODEL=='CatBoost':
+    #     data = csr_data_split(args, data)
+    #     data = csr_data_loader(args,data)
     else:
         pass
 

@@ -1,7 +1,9 @@
 import numpy as np
-
 import torch
 import torch.nn as nn
+
+from catboost import CatBoostRegressor, CatBoostClassifier, Pool
+
 
 def rmse(real: list, predict: list) -> float:
     pred = np.array(predict)
