@@ -19,23 +19,95 @@ def age_map(x: int) -> int:
         return 5
     else:
         return 6
+    
+def process_context_data(users, books, ratings1, ratings2):
+# 남은 users['age'] 결측치 채우기
+# global users['age']로 결측치 채우기
+    users['age'] = users['age'].fillna(users['age'].mean())
+    
+# location 결측치 채우기
+# 우선 location_country 결측치를 최빈 country로 채우기
+    users['location_country'] = users['location_country'].fillna(users['location_country'].mode()[0])
+# state 최빈값 대치
+    state_mode = users.groupby(['location_country'])['location_state'].agg(pd.Series.mode)
+    idx = users[(users['location_state'].isna())].index
+    for i in idx:
+        try:
+            tmp_country = users.loc[i, 'location_country']
+            if isinstance(state_mode[tmp_country], str):
+                users.loc[i, 'location_state'] = state_mode[tmp_country]
+            else:
+                users.loc[i, 'location_state'] = state_mode[tmp_country][0]
+        except:
+            pass
+# city 최빈값 대치
+    city_mode1 = users.groupby(['location_country','location_state'])['location_city'].agg(pd.Series.mode)
+    city_mode2 = users.groupby(['location_state'])['location_city'].agg(pd.Series.mode)
+    city_mode3 = users.groupby(['location_country'])['location_city'].agg(pd.Series.mode)
+
+    idx = users[(users['location_city'].isna())].index
+    for i in idx:
+        tmp_state = users.loc[i, 'location_state']
+        tmp_country = users.loc[i, 'location_country']
+        try:
+            if isinstance(city_mode1[tmp_country,tmp_state], str):
+                users.loc[i, 'location_city'] = city_mode1[tmp_country, tmp_state]
+            else:
+                users.loc[i, 'location_city'] = city_mode1[tmp_country, tmp_state][0]
+        except:
+            try:
+                if isinstance(city_mode2[tmp_state], str):
+                    users.loc[i, 'location_city'] = city_mode2[tmp_state]
+                else:
+                    users.loc[i, 'location_city'] = city_mode2[tmp_state][0]
+            except:
+                try:
+                    if isinstance(city_mode3[tmp_country], str):
+                        users.loc[i, 'location_city'] = city_mode3[tmp_country]
+                    else:
+                        users.loc[i, 'location_city'] = city_mode3[tmp_country][0]
+                except:
+                    pass
+# 너무 특이한 국가에서 사는 사람
+    users['location_state'] = users['location_state'] = users['location_state'].fillna(users['location_state'].mode()[0])
+    users['location_city'] = users['location_city'] = users['location_city'].fillna(users['location_city'].mode()[0])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def dl_data_load(args):
-
     ######################## DATA LOAD
     """
-    users:
+    users_preprocessed:
         dataframe
-        user_id, location, age
+        user_id,age,location_city,location_state,location_country
     """
-    users = pd.read_csv(args.DATA_PATH + 'users.csv')
-    # users = users.drop(['location'], axis=1)
+    users = pd.read_csv(args.DATA_PATH + 'users_preprocessed.csv')
     """
-    books:
+    books_merged:
         dataframe
-        isbn, book_title, book_author, year_of_publication, publisher, img_url, language, category, summary, img_path
+        isbn,book_title,year_of_publication,publisher,img_url,
+        language,summary,img_path,category_high,book_author,category,
+        new_language,remove_country_code,book_author_over3,book_author_over5,
+        book_author_over10,book_author_over50,book_author_over100
     """
-    books = pd.read_csv(args.DATA_PATH + 'books.csv')
+    books = pd.read_csv(args.DATA_PATH + 'books_merged.csv')
     """
     train:
         user_id, isbn, rating
@@ -43,27 +115,11 @@ def dl_data_load(args):
     train = pd.read_csv(args.DATA_PATH + 'train_ratings.csv')
     test = pd.read_csv(args.DATA_PATH + 'test_ratings.csv')
     sub = pd.read_csv(args.DATA_PATH + 'sample_submission.csv')
-    
-    # if args.MODEL == 'NCF':
-    # # age 전처리
-    #     train = pd.merge(left=train, right=users, how='inner', on='user_id')
-    #     train['age'] = train['age'].fillna(int(train['age'].mean()))
-    #     # age 고유 개수들에 비해 EMBED_DIM이 크면, index 범위 넘은 에러남 -> 아닌 것 같음
-    #     train['age'] = train['age'].apply(age_map)
-    #     test = pd.merge(left=test, right=users, how='inner', on='user_id')
-    #     test['age'] = test['age'].fillna(int(test['age'].mean()))
-    #     test['age'] = test['age'].apply(age_map)
-        
-    #     sub = pd.merge(left=sub, right=users, how='inner', on='user_id')
-    #     sub['age'] = sub['age'].fillna(int(sub['age'].mean()))
-    #     sub['age'] = sub['age'].apply(age_map)
 
     # 모든 유저
     ids = pd.concat([train['user_id'], sub['user_id']]).unique()
     # 모든 책
     isbns = pd.concat([train['isbn'], sub['isbn']]).unique()
-    # # 모든 연령
-    # ages = pd.concat([train['age'], test['age']]).unique()
     """
     dict 생성
         key: idx
@@ -76,9 +132,6 @@ def dl_data_load(args):
         value: item_id
     """
     idx2isbn = {idx:isbn for idx, isbn in enumerate(isbns)}
-    
-    # idx2age = {idx+1:age for idx, age in enumerate(ages)}
-
     """
     dict 생성
         key: user_id
@@ -92,9 +145,6 @@ def dl_data_load(args):
     """
     isbn2idx = {isbn:idx for idx, isbn in idx2isbn.items()}
     
-    # age2idx = {age:idx+1 for idx, age in enumerate(ages)}
-
-    # 오 이런게 가능한가보네
     train['user_id'] = train['user_id'].map(user2idx)
     sub['user_id'] = sub['user_id'].map(user2idx)
     test['user_id'] = test['user_id'].map(user2idx)
@@ -103,25 +153,10 @@ def dl_data_load(args):
     sub['isbn'] = sub['isbn'].map(isbn2idx)
     test['isbn'] = test['isbn'].map(isbn2idx)
     
-    # train['age'] = train['age'].map(isbn2idx)
-    # sub['age'] = sub['age'].map(isbn2idx)
-    # test['age'] = test['age'].map(isbn2idx)
-
-    if args.MODEL == 'NCF':
-        """
-        field_dims:
-            [유저 전체 수, 아이템 전체 수, 연령대==6]
-        """
-        field_dims = np.array([len(user2idx), len(isbn2idx)], dtype=np.uint32)
-    else:
-        """
-        field_dims:
-            [유저 전체 수, 아이템 전체 수]
-        """
-        field_dims = np.array([len(user2idx), len(isbn2idx)], dtype=np.uint32)
+    idx, context_train, context_test = process_context_data(users, books, train, test)
+    field_dims = np.array([len(user2idx), len(isbn2idx)], dtype=np.uint32)
 
     data = {
-            # 'train': user_id, isbn, age, rating
             'train':train,
             'test':test.drop(['rating'], axis=1),
             'field_dims':field_dims,

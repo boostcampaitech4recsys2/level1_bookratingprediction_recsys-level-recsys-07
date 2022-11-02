@@ -21,10 +21,56 @@ def age_map(x: int) -> int:
         return 6
 
 def process_context_data(users, books, ratings1, ratings2):
-    users['location_city'] = users['location'].apply(lambda x: x.split(',')[0])
-    users['location_state'] = users['location'].apply(lambda x: x.split(',')[1])
-    users['location_country'] = users['location'].apply(lambda x: x.split(',')[2])
-    users = users.drop(['location'], axis=1)
+# 남은 users['age'] 결측치 채우기
+# global users['age']로 결측치 채우기
+    users['age'] = users['age'].fillna(users['age'].mean())
+    
+# location 결측치 채우기
+# 우선 location_country 결측치를 최빈 country로 채우기
+    users['location_country'] = users['location_country'].fillna(users['location_country'].mode()[0])
+# state 최빈값 대치
+    state_mode = users.groupby(['location_country'])['location_state'].agg(pd.Series.mode)
+    idx = users[(users['location_state'].isna())].index
+    for i in idx:
+        try:
+            tmp_country = users.loc[i, 'location_country']
+            if isinstance(state_mode[tmp_country], str):
+                users.loc[i, 'location_state'] = state_mode[tmp_country]
+            else:
+                users.loc[i, 'location_state'] = state_mode[tmp_country][0]
+        except:
+            pass
+# city 최빈값 대치
+    city_mode1 = users.groupby(['location_country','location_state'])['location_city'].agg(pd.Series.mode)
+    city_mode2 = users.groupby(['location_state'])['location_city'].agg(pd.Series.mode)
+    city_mode3 = users.groupby(['location_country'])['location_city'].agg(pd.Series.mode)
+
+    idx = users[(users['location_city'].isna())].index
+    for i in idx:
+        tmp_state = users.loc[i, 'location_state']
+        tmp_country = users.loc[i, 'location_country']
+        try:
+            if isinstance(city_mode1[tmp_country,tmp_state], str):
+                users.loc[i, 'location_city'] = city_mode1[tmp_country, tmp_state]
+            else:
+                users.loc[i, 'location_city'] = city_mode1[tmp_country, tmp_state][0]
+        except:
+            try:
+                if isinstance(city_mode2[tmp_state], str):
+                    users.loc[i, 'location_city'] = city_mode2[tmp_state]
+                else:
+                    users.loc[i, 'location_city'] = city_mode2[tmp_state][0]
+            except:
+                try:
+                    if isinstance(city_mode3[tmp_country], str):
+                        users.loc[i, 'location_city'] = city_mode3[tmp_country]
+                    else:
+                        users.loc[i, 'location_city'] = city_mode3[tmp_country][0]
+                except:
+                    pass
+# 너무 특이한 국가에서 사는 사람
+    users['location_state'] = users['location_state'] = users['location_state'].fillna(users['location_state'].mode()[0])
+    users['location_city'] = users['location_city'] = users['location_city'].fillna(users['location_city'].mode()[0])
 
     ratings = pd.concat([ratings1, ratings2]).reset_index(drop=True)
 
@@ -81,7 +127,7 @@ def process_context_data(users, books, ratings1, ratings2):
 def context_data_load(args):
 
     ######################## DATA LOAD
-    users = pd.read_csv(args.DATA_PATH + 'users.csv')
+    users = pd.read_csv(args.DATA_PATH + 'users_preprocessed.csv')
     books = pd.read_csv(args.DATA_PATH + 'books.csv')
     train = pd.read_csv(args.DATA_PATH + 'train_ratings.csv')
     test = pd.read_csv(args.DATA_PATH + 'test_ratings.csv')
