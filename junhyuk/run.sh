@@ -17,3 +17,5 @@ python3 main.py --EPOCHS 1 --MODEL NCF --NCF_DROPOUT 0.1 --BATCH_SIZE 1024 --LR 
 # python3 main.py --EPOCHS 4 --MODEL FFM
 # def summary_merge(df, user_id, max_summary):
 #     return " ".join(df[df['user_id'] == user_id].sort_values(by='summary_length', ascending=False)['summary'].values[:max_summary])
+
+# python ensemble.py --ENSEMBLE_FILES 20221027_012536_NCF,DCN_2.1816_msk,20221101_145823_WDN --ENSEMBLE_STRATEGY WEIGHTED --ENSEMBLE_WEIGHT 0.40,0.5,0.1
