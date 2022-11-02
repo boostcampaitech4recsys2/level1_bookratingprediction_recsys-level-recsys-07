@@ -1,8 +1,10 @@
 # ignore mac system files
 .DS_store
 
-data/
+/data/
 
 *.pt
 
-/submit
+submit/
+
+.ipynb_checkpoints/
