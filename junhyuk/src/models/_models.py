@@ -195,7 +195,7 @@ class MultiLayerPerceptron(nn.Module):
 
 class _NeuralCollaborativeFiltering(nn.Module):
 
-    def __init__(self, field_dims, field_idx_dict, embed_dim, mlp_dims, dropout, batch_size):
+    def __init__(self, field_dims, field_idx_dict, embed_dim, mlp_dims, dropout):
         super().__init__()
         self.field_idx_dict = field_idx_dict
         """
@@ -210,9 +210,7 @@ class _NeuralCollaborativeFiltering(nn.Module):
         self.embedding = FeaturesEmbedding(field_dims, embed_dim)
         self.embed_output_dim = len(field_dims) * embed_dim
         self.mlp = MultiLayerPerceptron(self.embed_output_dim, mlp_dims, dropout, output_layer=False)
-        self.fc = torch.nn.Linear(embed_dim, 1)
-        self.last_mlp_layer = mlp_dims[-1]
-        self.batch_size = batch_size
+        self.fc = torch.nn.Linear(mlp_dims[-1] + embed_dim, 1)
 
     def forward(self, x):
         """
@@ -240,17 +238,12 @@ class _NeuralCollaborativeFiltering(nn.Module):
         # x.view(-1, self.embed_output_dim).shape: torch.Size([1024, 32])
         # self.mlp(x.view(-1, self.embed_output_dim)).shape: ([1024, (2 + context_feature 수)56])
         # breakpoint()
-        # # shape '[-1, 176]' is invalid for input of size 163840
+        # shape '[-1, 176]' is invalid for input of size 163840
         x = x.view(-1, self.embed_output_dim)
-        # breakpoint()
-        # x = x.view(self.batch_size ,-1, self.last_mlp_layer)
         # breakpoint()
         x = self.mlp(x)
         # breakpoint()
         x = torch.cat([gmf, x], dim=1)
-        # breakpoint()
-        # x = gmf
-        # breakpoint()
         x = self.fc(x).squeeze(1)
         return x
 
