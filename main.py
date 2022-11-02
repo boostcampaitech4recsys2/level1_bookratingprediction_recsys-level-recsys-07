@@ -126,9 +126,10 @@ if __name__ == "__main__":
         new_language,remove_country_code,book_author_over3,book_author_over5,
         book_author_over10,book_author_over50,book_author_over100
     """
-    
-    arg('--ADD_CONTEXT', type=list, default=['isbn', 'category_high', 'new_language','book_author_over50','book_author_over10', 'book_author_over100','publisher',\
+    arg('--ADD_CONTEXT', nargs='+', type=str, default=['isbn', 'category_high', 'new_language','book_author_over50','book_author_over10', 'book_author_over100','publisher',\
         'year_of_publication','remove_country_code'], help='context 선택이 가능합니다.')
+    # arg('--ADD_CONTEXT', type=list, default=['isbn', 'category_high', 'new_language','book_author_over50','book_author_over10', 'book_author_over100','publisher',\
+    #     'year_of_publication','remove_country_code'], help='context 선택이 가능합니다.', nargs='+')
     
     ############### TRAINING OPTION
     arg('--BATCH_SIZE', type=int, default=1024, help='Batch size를 조정할 수 있습니다.')
@@ -147,7 +148,7 @@ if __name__ == "__main__":
 
     ############### NCF
     arg('--NCF_EMBED_DIM', type=int, default=16, help='NCF에서 embedding시킬 차원을 조정할 수 있습니다.')
-    arg('--NCF_MLP_DIMS', type=list, default=(256, 256, 256, 256, 256), help='NCF에서 MLP Network의 차원을 조정할 수 있습니다.')
+    arg('--NCF_MLP_DIMS', nargs='+' ,type=int, default=(256, 256, 256, 256, 256), help='NCF에서 MLP Network의 차원을 조정할 수 있습니다.')
     
     # arg('--NCF_EMBED_DIM', type=int, default=4, help='NCF에서 embedding시킬 차원을 조정할 수 있습니다.')
     # arg('--NCF_MLP_DIMS', type=list, default=(8,8,8,8,8,8,8,8,8,8,8), help='NCF에서 MLP Network의 차원을 조정할 수 있습니다.')

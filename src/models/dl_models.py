@@ -84,6 +84,7 @@ class NeuralCollaborativeFiltering:
                                                     embed_dim=self.embed_dim, mlp_dims=self.mlp_dims, dropout=self.dropout).to(self.device)
         self.optimizer = torch.optim.Adam(params=self.model.parameters(), lr=self.learning_rate, amsgrad=True, weight_decay=self.weight_decay)
 
+        self.feature_names = '_'.join(args.ADD_CONTEXT)
 
     def train(self):
       # model: type, optimizer: torch.optim, train_dataloader: DataLoader, criterion: torch.nn, device: str, log_interval: int=100
@@ -141,7 +142,7 @@ class NeuralCollaborativeFiltering:
             'train acc': train_acc_list,\
             'val loss': valid_loss_list,\
             'val acc': valid_acc_list})
-        log_df.to_csv("NCF log.csv", mode="w")
+        log_df.to_csv(f"NCF__{self.feature_names}__log.csv", mode="w")
 
     def predict_train(self):
         self.model.eval()

@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader, Dataset
 
-from preprocess_data import *
+from src.data.preprocess_data import *
 
 def age_map(x: int) -> int:
     x = int(x)
