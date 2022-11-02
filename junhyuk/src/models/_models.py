@@ -241,15 +241,15 @@ class _NeuralCollaborativeFiltering(nn.Module):
         # self.mlp(x.view(-1, self.embed_output_dim)).shape: ([1024, (2 + context_feature 수)56])
         # breakpoint()
         # # shape '[-1, 176]' is invalid for input of size 163840
-        # x = x.view(-1, self.embed_output_dim)
+        x = x.view(-1, self.embed_output_dim)
         # breakpoint()
         # x = x.view(self.batch_size ,-1, self.last_mlp_layer)
         # breakpoint()
-        # x = self.mlp(x)
+        x = self.mlp(x)
         # breakpoint()
-        # x = torch.cat([gmf, x], dim=1)
+        x = torch.cat([gmf, x], dim=1)
         # breakpoint()
-        x = gmf
+        # x = gmf
         # breakpoint()
         x = self.fc(x).squeeze(1)
         return x

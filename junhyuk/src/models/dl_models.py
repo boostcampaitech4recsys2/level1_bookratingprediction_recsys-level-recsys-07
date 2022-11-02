@@ -75,11 +75,12 @@ class NeuralCollaborativeFiltering:
 
         self.mlp_dims = args.NCF_MLP_DIMS
         self.dropout = args.NCF_DROPOUT
+        self.batch_size = args.BATCH_SIZE
 
         # self.model = _NeuralCollaborativeFiltering(self.field_dims, user_field_idx=self.user_field_idx, item_field_idx=self.item_field_idx,
         #                                             embed_dim=self.embed_dim, mlp_dims=self.mlp_dims, dropout=self.dropout).to(self.device)
         
-        self.model = _NeuralCollaborativeFiltering(self.field_dims, field_idx_dict=self.field_idx_dict,
+        self.model = _NeuralCollaborativeFiltering(self.field_dims, field_idx_dict=self.field_idx_dict, batch_size=self.batch_size,
                                                     embed_dim=self.embed_dim, mlp_dims=self.mlp_dims, dropout=self.dropout).to(self.device)
         self.optimizer = torch.optim.Adam(params=self.model.parameters(), lr=self.learning_rate, amsgrad=True, weight_decay=self.weight_decay)
 
