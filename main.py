@@ -21,9 +21,9 @@ def main(args):
 
     ######################## DATA LOAD
     print(f'--------------- {args.MODEL} Load Data ---------------')
-    if args.MODEL in ('FM', 'FFM', 'DFM'):
+    if args.MODEL in ('FM', 'FFM', 'DFM','DCN'):
         data = context_data_load(args)
-    elif args.MODEL in ('NCF', 'DCN', 'WDN'):
+    elif args.MODEL in ('NCF', 'WDN'):
         data = dl_data_load(args)
     elif args.MODEL == 'CNN_FM':
         data = image_data_load(args)
@@ -36,11 +36,11 @@ def main(args):
 
     ######################## Train/Valid Split
     print(f'--------------- {args.MODEL} Train/Valid Split ---------------')
-    if args.MODEL in ('FM', 'FFM', 'DFM'):
+    if args.MODEL in ('FM', 'FFM', 'DFM', 'DCN'):
         data = context_data_split(args, data)
         data = context_data_loader(args, data)
 
-    elif args.MODEL in ('NCF', 'DCN', 'WDN'):
+    elif args.MODEL in ('NCF', 'WDN'):
         data = dl_data_split(args, data)
         data = dl_data_loader(args, data)
 
@@ -149,8 +149,8 @@ if __name__ == "__main__":
     arg('--WDN_DROPOUT', type=float, default=0.2, help='WDN에서 Dropout rate를 조정할 수 있습니다.')
 
     ############### DCN
-    arg('--DCN_EMBED_DIM', type=int, default=16, help='DCN에서 embedding시킬 차원을 조정할 수 있습니다.')
-    arg('--DCN_MLP_DIMS', type=list, default=(16, 16), help='DCN에서 MLP Network의 차원을 조정할 수 있습니다.')
+    arg('--DCN_EMBED_DIM', type=list, default=(32,32, 2,2,2,2,2,2,2,2,2,2,2), help='DCN에서 embedding시킬 차원을 조정할 수 있습니다.')
+    arg('--DCN_MLP_DIMS', type=list, default=(32, 16), help='DCN에서 MLP Network의 차원을 조정할 수 있습니다.')
     arg('--DCN_DROPOUT', type=float, default=0.2, help='DCN에서 Dropout rate를 조정할 수 있습니다.')
     arg('--DCN_NUM_LAYERS', type=int, default=3, help='DCN에서 Cross Network의 레이어 수를 조정할 수 있습니다.')
 

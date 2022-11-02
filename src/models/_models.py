@@ -254,22 +254,31 @@ class _DeepCrossNetworkModel(nn.Module):
         R Wang, et al. Deep & Cross Network for Ad Click Predictions, 2017.
     """
 
-    def __init__(self, field_dims: np.ndarray, embed_dim: int, num_layers: int, mlp_dims: tuple, dropout: float):
+    def __init__(self, n_features: int, field_idx: np.ndarray, field_dims: np.ndarray, embed_dims: np.ndarray, num_layers: int, mlp_dims: tuple, dropout: float):
         super().__init__()
-        self.embedding = FeaturesEmbedding(field_dims, embed_dim)
-        self.embed_output_dim = len(field_dims) * embed_dim
+        self.field_idx = field_idx
+        self.dense_idx = np.delete(np.arange(n_features), self.field_idx)
+        self.embeddings = torch.nn.ModuleList([
+            torch.nn.Embedding(field_dim, embed_dim) for field_dim, embed_dim in zip(field_dims, embed_dims)
+        ])
+        # self.embedding = FeaturesEmbedding(field_dims, embed_dim)
+        self.embed_output_dim = sum(embed_dims) + n_features - len(field_idx)
         self.cn = CrossNetwork(self.embed_output_dim, num_layers)
         self.mlp = MultiLayerPerceptron(self.embed_output_dim, mlp_dims, dropout, output_layer=False)
-        self.cd_linear = nn.Linear(mlp_dims[0], 1, bias=False)
+        self.cd_linear = nn.Linear(self.embed_output_dim+mlp_dims[-1], 1, bias=False)
 
     def forward(self, x: torch.Tensor):
         """
         :param x: Long tensor of size ``(batch_size, num_fields)``
         """
-        embed_x = self.embedding(x).view(-1, self.embed_output_dim)
-        x_l1 = self.cn(embed_x)
-        x_out = self.mlp(x_l1)
-        p = self.cd_linear(x_out)
+        x_continuous = x[:,self.dense_idx]
+        
+        embed_x = torch.cat([self.embeddings[i](x[:,idx]) for i, idx in enumerate(self.field_idx)], dim=1)
+        x_cat = torch.cat([embed_x, x_continuous], dim=1)
+        # embed_x = self.embedding(x_field).view(-1, self.embed_output_dim)
+        x_cross = self.cn(x_cat)
+        x_dnn = self.mlp(x_cat)
+        p = self.cd_linear(torch.cat([x_cross, x_dnn], dim=1))
         return p.squeeze(1)
 
 ############################# DeepFM

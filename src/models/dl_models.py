@@ -197,6 +197,8 @@ class DeepCrossNetworkModel:
         self.train_dataloader = data['train_dataloader']
         self.valid_dataloader = data['valid_dataloader']
         self.field_dims = data['field_dims']
+        self.n_features = data['n_features']
+        self.field_idx = data['field_idx']
 
         self.embed_dim = args.DCN_EMBED_DIM
         self.epochs = args.EPOCHS
@@ -210,7 +212,7 @@ class DeepCrossNetworkModel:
         self.dropout = args.DCN_DROPOUT
         self.num_layers = args.DCN_NUM_LAYERS
 
-        self.model = _DeepCrossNetworkModel(self.field_dims, self.embed_dim, num_layers=self.num_layers, mlp_dims=self.mlp_dims, dropout=self.dropout).to(self.device)
+        self.model = _DeepCrossNetworkModel(self.n_features, self.field_idx, self.field_dims, self.embed_dim, num_layers=self.num_layers, mlp_dims=self.mlp_dims, dropout=self.dropout).to(self.device)
         self.optimizer = torch.optim.Adam(params=self.model.parameters(), lr=self.learning_rate, amsgrad=True, weight_decay=self.weight_decay)
 
 
