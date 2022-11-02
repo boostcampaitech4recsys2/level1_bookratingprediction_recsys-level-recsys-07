@@ -4,6 +4,7 @@ import tqdm
 import torch
 import torch.nn as nn
 from ._models import RMSELoss, FeaturesEmbedding, FactorizationMachine_v
+import time
 
 
 class CNN_1D(nn.Module):
@@ -34,6 +35,8 @@ class _DeepCoNN(nn.Module):
     def __init__(self, field_dims, embed_dim, word_dim, out_dim, kernel_size, conv_1d_out_dim, latent_dim):
         super(_DeepCoNN, self).__init__()
         self.embedding = FeaturesEmbedding(field_dims, embed_dim)
+        
+        # cnn_u 랑 cnn_i 동일하게 파라미터 두면 안 좋을듯
         self.cnn_u = CNN_1D(
                              word_dim=word_dim,
                              out_dim=out_dim,
@@ -52,8 +55,12 @@ class _DeepCoNN(nn.Module):
                                          )
     def forward(self, x):
         user_isbn_vector, user_text_vector, item_text_vector = x[0], x[1], x[2]
+        # 유저 - 책 에대한 정보인가봄
         user_isbn_feature = self.embedding(user_isbn_vector)
+        # user test는 뭐냐
         user_text_feature = self.cnn_u(user_text_vector)
+        # 이거는 책 요약인가?
+        # 아무래도 구성이 어떻게 됐는지를 봐야할 듯
         item_text_feature = self.cnn_i(item_text_vector)
         feature_vector = torch.cat([
                                     user_isbn_feature.view(-1, user_isbn_feature.size(1) * user_isbn_feature.size(2)),
@@ -86,14 +93,19 @@ class DeepCoNN:
 
 
     def train(self):
+        sum_time = 0
+        print_iter = 1
+        
         minimum_loss = 999999999
         loss_list = []
         tk0 = tqdm.tqdm(range(self.epochs), smoothing=0, mininterval=1.0)
         for epoch in tk0:
+            start_time = time.time()
             self.model.train()
-            total_loss = 0
+            train_loss = 0
             n = 0
             for i, data in enumerate(self.train_data_loader):
+                # 'user_isbn_vector' -> 이거는 반드시 등장 안할 수도 있나봄 잘은 모름 뭔지
                 if len(data)==3:
                     fields, target = [data['user_summary_merge_vector'].to(self.device), data['item_summary_vector'].to(self.device)], data['label'].to(self.device)
                 elif len(data)==4:
@@ -103,10 +115,13 @@ class DeepCoNN:
                 self.model.zero_grad()
                 loss.backward()
                 self.optimizer.step()
-                total_loss += loss.item()
+                train_loss += loss.item()
                 n += 1
+                
+            train_loss /= (i + 1)
+            
             self.model.eval()
-            val_total_loss = 0
+            valid_loss = 0
             val_n = 0
             for i, data in enumerate(self.valid_data_loader):
                 if len(data)==3:
@@ -115,20 +130,27 @@ class DeepCoNN:
                     fields, target = [data['user_isbn_vector'].to(self.device), data['user_summary_merge_vector'].to(self.device), data['item_summary_vector'].to(self.device)], data['label'].to(self.device)
                 y = self.model(fields)
                 loss = self.criterion(y, target.float())
-                self.model.zero_grad()
-                loss.backward()
-                self.optimizer.step()
-                val_total_loss += loss.item()
+                valid_loss += loss.item()
                 val_n += 1
-            if minimum_loss > (val_total_loss/val_n):
-                minimum_loss = (val_total_loss/val_n)
+            valid_loss_ = valid_loss / i
+            if minimum_loss > (valid_loss/val_n):
+                minimum_loss = (valid_loss/val_n)
                 if not os.path.exists('./models'):
                     os.makedirs('./models')
                 torch.save(self.model.state_dict(), './models/{}.pt'.format(self.model_name))
-                loss_list.append([epoch, total_loss/n, val_total_loss/val_n, 'Model saved'])
+                loss_list.append([epoch, train_loss/n, valid_loss/val_n, 'Model saved'])
             else:
-                loss_list.append([epoch, total_loss/n, val_total_loss/val_n, 'None'])
-            tk0.set_postfix(train_loss=total_loss/n, valid_loss=val_total_loss/val_n)
+                loss_list.append([epoch, train_loss/n, valid_loss/val_n, 'None'])
+            tk0.set_postfix(train_loss=train_loss/n, valid_loss=valid_loss/val_n)
+            
+            elapsed = time.time() - start_time
+            if epoch % print_iter == 0:
+                print(f"현재 iter: {epoch + 1}, elapsed: {elapsed}")
+                print(f"train loss: {train_loss}")
+                print(f"valid loss: {valid_loss_}")
+            sum_time += elapsed
+            
+        print(f"train done! elapsed: {sum_time}")
 
 
     def predict(self, test_data_loader):

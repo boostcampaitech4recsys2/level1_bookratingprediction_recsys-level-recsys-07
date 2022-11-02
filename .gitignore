@@ -10,3 +10,6 @@ submit/
 .ipynb_checkpoints/
 
 /catboost_info/
+
+
+/dont_push/

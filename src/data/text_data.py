@@ -26,19 +26,36 @@ def summary_merge(df, user_id, max_summary):
 
 def text_to_vector(text, tokenizer, model, device):
     for sent in tokenize.sent_tokenize(text):
+        # breakpoint()
         text_ = "[CLS] " + sent + " [SEP]"
-        tokenized = tokenizer.tokenize(text_)
+        # breakpoint()
+        # tokenized = tokenizer.tokenize(text_)
+        tokenized = tokenizer.encode(text_, padding=True, truncation=True,max_length=512, add_special_tokens = True)
+        # breakpoint()
         indexed = tokenizer.convert_tokens_to_ids(tokenized)
+        # breakpoint()
         segments_idx = [1] * len(tokenized)
+        # breakpoint()
         token_tensor = torch.tensor([indexed])
+        # breakpoint()
         sgments_tensor = torch.tensor([segments_idx])
+        # breakpoint()
         with torch.no_grad():
+            if token_tensor.shape[1] == 661:
+                breakpoint()
             outputs = model(token_tensor.to(device), sgments_tensor.to(device))
+            # breakpoint()
             encode_layers = outputs[0]
             sentence_embedding = torch.mean(encode_layers[0], dim=0)
+        # breakpoint()
     return sentence_embedding.cpu().detach().numpy()
 
 
+# users = pd.read_csv(args.DATA_PATH + 'users.csv')
+# books = pd.read_csv(args.DATA_PATH + 'books.csv')
+# train = pd.read_csv(args.DATA_PATH + 'train_ratings.csv')
+# test = pd.read_csv(args.DATA_PATH + 'test_ratings.csv')
+# sub = pd.read_csv(args.DATA_PATH + 'sample_submission.csv')
 def process_text_data(df, books, user2idx, isbn2idx, device, train=False, user_summary_merge_vector=False, item_summary_vector=False):
     books_ = books.copy()
     books_['isbn'] = books_['isbn'].map(isbn2idx)
@@ -77,6 +94,10 @@ def process_text_data(df, books, user2idx, isbn2idx, device, train=False, user_s
             np.save('./data/text_vector/train_user_summary_merge_vector.npy', vector)
         else:
             np.save('./data/text_vector/test_user_summary_merge_vector.npy', vector)
+        if not os.path.exists('./data/text_vector'):
+            print("WRONG!!")
+        else:
+            print("WIERD!!")
 
         print('Create Item Summary Vector')
         item_summary_vector_list = []
@@ -145,7 +166,7 @@ class Text_Dataset(Dataset):
 def text_data_load(args):
 
     users = pd.read_csv(args.DATA_PATH + 'users.csv')
-    books = pd.read_csv(args.DATA_PATH + 'books.csv')
+    books = pd.read_csv(args.DATA_PATH + 'summary_preprocessed.csv')
     train = pd.read_csv(args.DATA_PATH + 'train_ratings.csv')
     test = pd.read_csv(args.DATA_PATH + 'test_ratings.csv')
     sub = pd.read_csv(args.DATA_PATH + 'sample_submission.csv')

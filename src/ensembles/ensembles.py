@@ -5,17 +5,31 @@ from ..models._models import rmse
 class Ensemble:
     def __init__(self, filenames:str, filepath:str):
         self.filenames = filenames
+        """
+        self.output_list:
+            각 모델별 rating들을 담은 list임
+        """
         self.output_list = []
 
         output_path = [filepath+filename+'.csv' for filename in filenames]
+        # 이거는 그냥 frame # user_id, isbn
         self.output_frame = pd.read_csv(output_path[0]).drop('rating',axis=1)
         self.output_df = self.output_frame.copy()
 
         for path in output_path:
+            # rating 읽어오기
             self.output_list.append(pd.read_csv(path)['rating'].to_list())
+
+        """
+        self.output_df:
+            dict형
+            key: filename [str]
+            value: rating [list]
+        """
         for filename,output in zip(filenames,self.output_list):
             self.output_df[filename] = output
 
+    # 전략1
     # Simple Weighted
     # 직접 weight를 지정하여, 앙상블합니다.
     def simple_weighted(self,weight:list):
@@ -25,11 +39,13 @@ class Ensemble:
             raise ValueError("weight의 합이 1이 되도록 입력해 주세요.")
 
         pred_arr = np.append([self.output_list[0]], [self.output_list[1]], axis=0)
+        # 2개는 무조건해야하니깐 하는거고, 3개이상일 때만 아래 loop가 돌아감
         for i in range(2, len(self.output_list)):
             pred_arr = np.append(pred_arr, [self.output_list[i]], axis=0)
         result = np.dot(pred_arr.T, np.array(weight))
         return result.tolist()
 
+    # 전략2
     # Average Weighted
     # (1/n)의 가중치로 앙상블을 진행합니다.
     def average_weighted(self):
@@ -38,6 +54,7 @@ class Ensemble:
         result = np.sum(pred_weight_list, axis=0)
         return result.tolist()
 
+    # 전략3
     # Mixed 
     # Negative case 발생 시, 다음 순서에서 예측한 rating으로 넘어가서 앙상블합니다.
     def mixed(self):
