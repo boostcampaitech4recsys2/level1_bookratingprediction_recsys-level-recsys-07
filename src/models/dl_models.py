@@ -290,6 +290,7 @@ class DeepFMModel:
         self.learning_rate = args.LR
         self.weight_decay = args.WEIGHT_DECAY
         self.log_interval = 100
+        self.patience_limit = args.PATIENCE_LIMIT
 
         self.device = args.DEVICE
 
@@ -308,7 +309,7 @@ class DeepFMModel:
         train_result = pd.DataFrame(np.zeros((self.epochs, 2)))
         train_result.columns = ['train_rmse', 'valid_rmse']
         best_loss = 10**9
-        patience_limit = 3
+        patience_limit = self.patience_limit
         patience_check = 0
         for epoch in range(self.epochs):
             self.model.train()
