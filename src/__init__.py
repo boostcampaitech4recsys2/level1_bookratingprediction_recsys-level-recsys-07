@@ -12,3 +12,4 @@ from .models.image_models import CNN_FM
 from .models.text_models import DeepCoNN
 
 from .ensembles.ensembles import Ensemble
+from .boosting.boosting import Boosting
