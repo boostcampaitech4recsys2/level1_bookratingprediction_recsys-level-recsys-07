@@ -39,21 +39,23 @@ class NeuralCollaborativeFiltering:
 
         """
         X:
-            batch_size * 2 == batch_size * len([user_id_열, isbn_열])
+            batch_size * (2 + context_feature 수)
+            == batch_size * 길이합([user_id_열, isbn_열, feature들])
         y:
-            batch_size * 1 == batch_size * len([ratings_열])
+            batch_size * 1 == batch_size * 길이([ratings_열])
         """
         self.train_dataloader = data['train_dataloader']
         """
         X:
-            batch_size * 2 == batch_size * len([user_id_열, isbn_열])
+            batch_size * (2 + context_feature 수)
+            == batch_size * 길이합([user_id_열, isbn_열, feature들])
         y:
-            batch_size * 1 == batch_size * len([ratings_열])
+            batch_size * 1 == batch_size * 길이([ratings_열])
         """
         self.valid_dataloader = data['valid_dataloader']
         """
         field_dims:
-            [유저 전체 수, 아이템 전체 수]
+            (2 + context_feature 수)
         """
         self.field_dims = data['field_dims']
         # self.train_dataloader에서 0번째 열이 user_id라는 뜻
@@ -61,9 +63,8 @@ class NeuralCollaborativeFiltering:
         # self.train_dataloader에서 1번째 열이 isbn이라는 뜻
         self.item_field_idx = np.array((1, ), dtype=np.long)
         
-        # # self.train_dataloader에서 2번째 열이 age이라는 뜻
-        # self.age_field_idx = np.array((2, ), dtype=np.long)
-
+        self.context_field_id = dict()
+        for 
         
         self.embed_dim = args.NCF_EMBED_DIM
         self.epochs = args.EPOCHS
