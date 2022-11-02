@@ -38,53 +38,30 @@ def process_context_data(users, books, ratings1, ratings2):
     #         pass
     ratings = pd.concat([ratings1, ratings2]).reset_index(drop=True)
 
-    user_features = [
-                     'user_id', 
-                     'age', 
-                     'location_city', 
-                     'location_state', 
-                     'location_country', 
-                    ]
-    book_features = [
-                     'isbn',
-                    #  'isenglish',
-                    #  'isenglish',
-                    #  'new_year', 
-                    #  'publisher_small', 
-                    #  'book_author_over100'
-                     'category_high', 
-                     'new_language', 
-                     'year_of_publication', 
-                     'publisher', 
-                    #  'book_author_over3',
-                    #  'book_author_over5',
-                    #  'book_author_over10',
-                    #  'book_author_over50',
-                     'book_author_over100',
-                    ]
-                    
-    # 인덱싱 처리된 데이터 조인
-    context_df = ratings.merge(users[user_features], on='user_id', how='left').merge(books[book_features], on='isbn', how='left')
-    train_df = ratings1.merge(users[user_features], on='user_id', how='left').merge(books[book_features], on='isbn', how='left')
-    test_df = ratings2.merge(users[user_features], on='user_id', how='left').merge(books[book_features], on='isbn', how='left')
-
     # user_power
-    tmp = train_df.groupby('user_id')['isbn'].count().reset_index()
+    tmp = ratings1.groupby('user_id')['isbn'].count().reset_index()
     tmp.columns = list(tmp.columns)[:-1] + ['user_power']
-    context_df = context_df.merge(tmp, how='left', on='user_id')
-    context_df['user_power'] = context_df['user_power'].fillna(0)
-    train_df = train_df.merge(tmp, how='left', on='user_id')
-    test_df = test_df.merge(tmp, how='left', on='user_id')
-    test_df['user_power'] = test_df['user_power'].fillna(0)
+    ratings = ratings.merge(tmp, how='left', on='user_id')
+    ratings['user_power'] = ratings['user_power'].fillna(0)
+    ratings1 = ratings1.merge(tmp, how='left', on='user_id')
+    ratings2 = ratings2.merge(tmp, how='left', on='user_id')
+    ratings2['user_power'] = ratings2['user_power'].fillna(0)
 
     # book_popularity
-    tmp = train_df.groupby('isbn')['user_id'].count().reset_index()
+    tmp = ratings1.groupby('isbn')['user_id'].count().reset_index()
     tmp.columns = list(tmp.columns)[:-1] + ['book_popularity']
-    context_df = context_df.merge(tmp, how='left', on='isbn')
-    context_df['book_popularity'] = context_df['book_popularity'].fillna(0)
-    train_df = train_df.merge(tmp, how='left', on='isbn')
-    test_df = test_df.merge(tmp, how='left', on='isbn')
-    test_df['book_popularity'] = test_df['book_popularity'].fillna(0)
+    ratings = ratings.merge(tmp, how='left', on='isbn')
+    ratings['book_popularity'] = ratings['book_popularity'].fillna(0)
+    ratings1 = ratings1.merge(tmp, how='left', on='isbn')
+    ratings2 = ratings2.merge(tmp, how='left', on='isbn')
+    ratings2['book_popularity'] = ratings2['book_popularity'].fillna(0)    
+                    
+    # 인덱싱 처리된 데이터 조인
+    context_df = ratings.merge(users, on='user_id', how='left').merge(books, on='isbn', how='left')
+    train_df = ratings1.merge(users, on='user_id', how='left').merge(books, on='isbn', how='left')
+    test_df = ratings2.merge(users, on='user_id', how='left').merge(books, on='isbn', how='left')
+
+    
     
     # 인덱싱 처리
     loc_city2idx = {v:k for k,v in enumerate(context_df['location_city'].unique())}
@@ -173,9 +150,40 @@ def context_data_load(args):
     books['isbn'] = books['isbn'].map(isbn2idx)
 
     idx, context_train, context_test = process_context_data(users, books, train, test)
-    
+    drop_features = [
+                # users
+                    #  'user_id', 
+                    #  'age', 
+                    #  'location_city', 
+                    #  'location_state', 
+                    #  'location_country', 
+                # books
+                    #  'isbn',
+                    # 'year_of_publication',
+                    # 'publisher',
+                    'language',
+                    'img_path',
+                    # 'category_high',
+                    'book_author',
+                    'book_author_over3',
+                    'book_author_over5',
+                    'book_author_over10',
+                    'book_author_over50',
+                    # 'book_author_over100',
+                    'category',
+                    # 'new_language',
+                    'remove_country_code',
+                    'isfiction',
+                    'isenglish',
+                    'new_year',
+                    'publisher_small',
+                    # 'user_power',
+                    # 'book_popularity',
+                    ]
+    context_train.drop(drop_features, axis=1, inplace=True)
+    context_test.drop(['rating']+drop_features, axis=1, inplace=True)
     n_features = context_train.shape[1]-1
-    field_idx = np.arange(13)
+    field_idx = np.arange(26-len(drop_features))
     field_dims = np.array([
                             len(user2idx), len(isbn2idx),
                             6, 
@@ -191,15 +199,11 @@ def context_data_load(args):
                             len(idx['book_popularity2idx']),
                             ], dtype=np.uint32)
     
-    # 'user_id', 'isbn', 
-    # 'age', 'location_city', 'location_state', 'location_country', 
-    # 'isenglish','isenglish','new_year', 'publisher_small', 'book_author_over100']
-    # 'category_high', 'new_language', 'year_of_publication', 'publisher', 'book_author_over10'
-    # 'user_power', 'book_popularity'
-    breakpoint()
+  
+
     data = {
             'train':context_train,
-            'test':context_test.drop(['rating'], axis=1),
+            'test':context_test,
             'n_features':n_features,
             'field_idx':field_idx,
             'field_dims':field_dims,
@@ -228,14 +232,13 @@ def context_data_split(args, data):
     return data
 
 def context_data_loader(args, data):
-    train_dataset = TensorDataset(torch.LongTensor(data['X_train'].values), torch.LongTensor(data['y_train'].values))
-    valid_dataset = TensorDataset(torch.LongTensor(data['X_valid'].values), torch.LongTensor(data['y_valid'].values))
-    test_dataset = TensorDataset(torch.LongTensor(data['test'].values))
+    train_dataset = TensorDataset(torch.FloatTensor(data['X_train'].values), torch.FloatTensor(data['y_train'].values))
+    valid_dataset = TensorDataset(torch.FloatTensor(data['X_valid'].values), torch.FloatTensor(data['y_valid'].values))
+    test_dataset = TensorDataset(torch.FloatTensor(data['test'].values))
 
     train_dataloader = DataLoader(train_dataset, batch_size=args.BATCH_SIZE, shuffle=args.DATA_SHUFFLE)
     valid_dataloader = DataLoader(valid_dataset, batch_size=args.BATCH_SIZE, shuffle=args.DATA_SHUFFLE)
     test_dataloader = DataLoader(test_dataset, batch_size=args.BATCH_SIZE, shuffle=False)
 
     data['train_dataloader'], data['valid_dataloader'], data['test_dataloader'] = train_dataloader, valid_dataloader, test_dataloader
-
     return data

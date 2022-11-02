@@ -13,7 +13,6 @@ from src import FactorizationMachineModel, FieldAwareFactorizationMachineModel
 from src import NeuralCollaborativeFiltering, WideAndDeepModel, DeepCrossNetworkModel
 from src import CNN_FM
 from src import DeepCoNN
-from src import DeepFMModel
 
 
 def main(args):
@@ -21,9 +20,9 @@ def main(args):
 
     ######################## DATA LOAD
     print(f'--------------- {args.MODEL} Load Data ---------------')
-    if args.MODEL in ('FM', 'FFM', 'DFM','DCN'):
+    if args.MODEL in ('FM', 'FFM'):
         data = context_data_load(args)
-    elif args.MODEL in ('NCF', 'WDN'):
+    elif args.MODEL in ('NCF', 'WDN', 'DCN'):
         data = dl_data_load(args)
     elif args.MODEL == 'CNN_FM':
         data = image_data_load(args)
@@ -36,11 +35,11 @@ def main(args):
 
     ######################## Train/Valid Split
     print(f'--------------- {args.MODEL} Train/Valid Split ---------------')
-    if args.MODEL in ('FM', 'FFM', 'DFM', 'DCN'):
+    if args.MODEL in ('FM', 'FFM'):
         data = context_data_split(args, data)
         data = context_data_loader(args, data)
 
-    elif args.MODEL in ('NCF', 'WDN'):
+    elif args.MODEL in ('NCF', 'WDN', 'DCN'):
         data = dl_data_split(args, data)
         data = dl_data_loader(args, data)
 
@@ -70,18 +69,16 @@ def main(args):
         model = CNN_FM(args, data)
     elif args.MODEL=='DeepCoNN':
         model = DeepCoNN(args, data)
-    elif args.MODEL=='DFM':
-        model = DeepFMModel(args, data)
     else:
         pass
 
     ######################## TRAIN
     print(f'--------------- {args.MODEL} TRAINING ---------------')
-    train_result = model.train()
+    model.train()
 
     ######################## INFERENCE
     print(f'--------------- {args.MODEL} PREDICT ---------------')
-    if args.MODEL in ('FM', 'FFM', 'NCF', 'WDN', 'DCN', 'DFM'):
+    if args.MODEL in ('FM', 'FFM', 'NCF', 'WDN', 'DCN'):
         predicts = model.predict(data['test_dataloader'])
     elif args.MODEL=='CNN_FM':
         predicts  = model.predict(data['test_dataloader'])
@@ -93,7 +90,7 @@ def main(args):
     ######################## SAVE PREDICT
     print(f'--------------- SAVE {args.MODEL} PREDICT ---------------')
     submission = pd.read_csv(args.DATA_PATH + 'sample_submission.csv')
-    if args.MODEL in ('FM', 'FFM', 'NCF', 'WDN', 'DCN', 'CNN_FM', 'DeepCoNN', 'DFM'):
+    if args.MODEL in ('FM', 'FFM', 'NCF', 'WDN', 'DCN', 'CNN_FM', 'DeepCoNN'):
         submission['rating'] = predicts
     else:
         pass
@@ -102,32 +99,42 @@ def main(args):
     now_date = time.strftime('%Y%m%d', now)
     now_hour = time.strftime('%X', now)
     save_time = now_date + '_' + now_hour.replace(':', '')
-    submission.to_csv('submit/{}_{}_{}.csv'.format(save_time, args.MODEL, args.MESSAGE), index=False)
+    submission.to_csv('submit/{}_{}_kjh.csv'.format(save_time, args.MODEL), index=False)
 
-    train_result.to_csv('train_result/{}_{}_{}.csv'.format(save_time, args.MODEL, args.MESSAGE), index=False)
 
 
 if __name__ == "__main__":
-
     ######################## BASIC ENVIRONMENT SETUP
     parser = argparse.ArgumentParser(description='parser')
     arg = parser.add_argument
 
     ############### BASIC OPTION
-    arg('--MESSAGE', type=str, default='', help='csv파일의 message를 작성할 수 있습니다.')
     arg('--DATA_PATH', type=str, default='data/', help='Data path를 설정할 수 있습니다.')
-    arg('--MODEL', type=str, choices=['FM', 'FFM', 'NCF', 'WDN', 'DCN', 'CNN_FM', 'DeepCoNN', 'DFM'],
+    arg('--MODEL', type=str, choices=['FM', 'FFM', 'NCF', 'WDN', 'DCN', 'CNN_FM', 'DeepCoNN'],
                                 help='학습 및 예측할 모델을 선택할 수 있습니다.')
     arg('--DATA_SHUFFLE', type=bool, default=True, help='데이터 셔플 여부를 조정할 수 있습니다.')
     arg('--TEST_SIZE', type=float, default=0.2, help='Train/Valid split 비율을 조정할 수 있습니다.')
     arg('--SEED', type=int, default=42, help='seed 값을 조정할 수 있습니다.')
+    
+    ############### ADD CONTEXT ###############
+    # arg('--ADD_CONTEXT', type=list, default=['isbn', 'category_high', 'publisher', 'new_language','book_author_over10', 'book_author_over100'], help='context 선택이 가능합니다.')
+    """
+    books_merged:
+        dataframe
+        isbn,book_title,year_of_publication,publisher,img_url,
+        language,summary,img_path,category_high,book_author,category,
+        new_language,remove_country_code,book_author_over3,book_author_over5,
+        book_author_over10,book_author_over50,book_author_over100
+    """
+    
+    arg('--ADD_CONTEXT', nargs='+', type=str, default=['isbn', 'category_high', 'new_language','book_author_over50','book_author_over10', 'book_author_over100','publisher',\
+        'year_of_publication','remove_country_code'], help='context 선택이 가능합니다.')
     
     ############### TRAINING OPTION
     arg('--BATCH_SIZE', type=int, default=1024, help='Batch size를 조정할 수 있습니다.')
     arg('--EPOCHS', type=int, default=10, help='Epoch 수를 조정할 수 있습니다.')
     arg('--LR', type=float, default=1e-3, help='Learning Rate를 조정할 수 있습니다.')
     arg('--WEIGHT_DECAY', type=float, default=1e-6, help='Adam optimizer에서 정규화에 사용하는 값을 조정할 수 있습니다.')
-    arg('--PATIENCE_LIMIT', type=int, default=10, help='early_stopping limit 값을 조정할 수 있습니다.')
 
     ############### GPU
     arg('--DEVICE', type=str, default='cuda', choices=['cuda', 'cpu'], help='학습에 사용할 Device를 조정할 수 있습니다.')
@@ -139,9 +146,13 @@ if __name__ == "__main__":
     arg('--FFM_EMBED_DIM', type=int, default=16, help='FFM에서 embedding시킬 차원을 조정할 수 있습니다.')
 
     ############### NCF
-    arg('--NCF_EMBED_DIM', type=int, default=16, help='NCF에서 embedding시킬 차원을 조정할 수 있습니다.')
-    arg('--NCF_MLP_DIMS', type=list, default=(16, 16), help='NCF에서 MLP Network의 차원을 조정할 수 있습니다.')
-    arg('--NCF_DROPOUT', type=float, default=0.2, help='NCF에서 Dropout rate를 조정할 수 있습니다.')
+    arg('--NCF_EMBED_DIM', type=int, default=4, help='NCF에서 embedding시킬 차원을 조정할 수 있습니다.')
+    arg('--NCF_MLP_DIMS', type=list, default=(256, 256, 256, 256, 256), help='NCF에서 MLP Network의 차원을 조정할 수 있습니다.')
+    
+    # arg('--NCF_EMBED_DIM', type=int, default=4, help='NCF에서 embedding시킬 차원을 조정할 수 있습니다.')
+    # arg('--NCF_MLP_DIMS', type=list, default=(8,8,8,8,8,8,8,8,8,8,8), help='NCF에서 MLP Network의 차원을 조정할 수 있습니다.')
+    
+    arg('--NCF_DROPOUT', type=float, default=0.1, help='NCF에서 Dropout rate를 조정할 수 있습니다.')
 
     ############### WDN
     arg('--WDN_EMBED_DIM', type=int, default=16, help='WDN에서 embedding시킬 차원을 조정할 수 있습니다.')
@@ -149,8 +160,8 @@ if __name__ == "__main__":
     arg('--WDN_DROPOUT', type=float, default=0.2, help='WDN에서 Dropout rate를 조정할 수 있습니다.')
 
     ############### DCN
-    arg('--DCN_EMBED_DIM', type=int, default=4, help='DCN에서 embedding시킬 차원을 조정할 수 있습니다.')
-    arg('--DCN_MLP_DIMS', type=list, default=(8, 8, 8, 8), help='DCN에서 MLP Network의 차원을 조정할 수 있습니다.')
+    arg('--DCN_EMBED_DIM', type=int, default=16, help='DCN에서 embedding시킬 차원을 조정할 수 있습니다.')
+    arg('--DCN_MLP_DIMS', type=list, default=(16, 16), help='DCN에서 MLP Network의 차원을 조정할 수 있습니다.')
     arg('--DCN_DROPOUT', type=float, default=0.2, help='DCN에서 Dropout rate를 조정할 수 있습니다.')
     arg('--DCN_NUM_LAYERS', type=int, default=3, help='DCN에서 Cross Network의 레이어 수를 조정할 수 있습니다.')
 
@@ -167,11 +178,6 @@ if __name__ == "__main__":
     arg('--DEEPCONN_WORD_DIM', type=int, default=768, help='DEEP_CONN에서 1D conv의 입력 크기를 조정할 수 있습니다.')
     arg('--DEEPCONN_OUT_DIM', type=int, default=32, help='DEEP_CONN에서 1D conv의 출력 크기를 조정할 수 있습니다.')
 
-    ############### DeepFM
-    arg('--DFM_EMBED_DIM', type=int, default=16, help='DEEP_CONN에서 user와 item에 대한 embedding시킬 차원을 조정할 수 있습니다.')
-    arg('--DFM_HIDDEN_UNITS', nargs='+', type=int, default=(64, 32), help='DFM에서 DNN hidden_layer의 차원을 조정할 수 있습니다.')
-    arg('--DFM_DROPOUT', type=float, default=0, help='DFM에서 Dropout rate를 조정할 수 있습니다.')
-    arg('--DFM_ACTIVATION', type=str, default='relu', help='DFM에서 activation function를 조정할 수 있습니다.')
-    arg('--DFM_USE_BN', type=bool, default=False, help='DFM에서 BN 여부를 조정할 수 있습니다.')
     args = parser.parse_args()
     main(args)
+    

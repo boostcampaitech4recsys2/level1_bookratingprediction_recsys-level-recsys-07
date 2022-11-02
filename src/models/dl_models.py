@@ -12,17 +12,57 @@ from ._models import rmse, RMSELoss
 
 class NeuralCollaborativeFiltering:
 
+    """
+    data 딕셔너리의 구성
+    data = {
+            'train':train,
+            'test':test.drop(['rating'], axis=1),
+            'field_dims':field_dims,
+            'users':users,
+            'books':books,
+            'sub':sub,
+            'idx2user':idx2user,
+            'idx2isbn':idx2isbn,
+            'user2idx':user2idx,
+            'isbn2idx':isbn2idx,
+            }
+    data['X_train'], data['X_valid'], data['y_train'], data['y_valid']
+    data['train_dataloader'], data['valid_dataloader'], data['test_dataloader']
+    """
     def __init__(self, args, data):
         super().__init__()
 
+        # torch.sqrt(nn.MSELoss(pred, target)+self.eps)
         self.criterion = RMSELoss()
 
+        """
+        X:
+            batch_size * (2 + context_feature 수)
+            == batch_size * 길이합([user_id_열, isbn_열, feature들])
+        y:
+            batch_size * 1 == batch_size * 길이([ratings_열])
+        """
         self.train_dataloader = data['train_dataloader']
+        """
+        X:
+            batch_size * (2 + context_feature 수)
+            == batch_size * 길이합([user_id_열, isbn_열, feature들])
+        y:
+            batch_size * 1 == batch_size * 길이([ratings_열])
+        """
         self.valid_dataloader = data['valid_dataloader']
+        """
+        field_dims:
+            (2 + 1 + context_feature 수)
+        """
         self.field_dims = data['field_dims']
-        self.user_field_idx = np.array((0, ), dtype=np.long)
-        self.item_field_idx=np.array((1, ), dtype=np.long)
-
+        # # self.train_dataloader에서 0번째 열이 user_id라는 뜻
+        # self.user_field_idx = np.array((0, ), dtype=np.long)
+        # # self.train_dataloader에서 1번째 열이 isbn이라는 뜻
+        # self.item_field_idx = np.array((1, ), dtype=np.long)
+        
+        self.field_idx_dict = data['field_name_dim_dict']
+        
         self.embed_dim = args.NCF_EMBED_DIM
         self.epochs = args.EPOCHS
         self.learning_rate = args.LR
@@ -33,11 +73,14 @@ class NeuralCollaborativeFiltering:
 
         self.mlp_dims = args.NCF_MLP_DIMS
         self.dropout = args.NCF_DROPOUT
+        self.batch_size = args.BATCH_SIZE
 
-        self.model = _NeuralCollaborativeFiltering(self.field_dims, user_field_idx=self.user_field_idx, item_field_idx=self.item_field_idx,
+        # self.model = _NeuralCollaborativeFiltering(self.field_dims, user_field_idx=self.user_field_idx, item_field_idx=self.item_field_idx,
+        #                                             embed_dim=self.embed_dim, mlp_dims=self.mlp_dims, dropout=self.dropout).to(self.device)
+        
+        self.model = _NeuralCollaborativeFiltering(self.field_dims, field_idx_dict=self.field_idx_dict,
                                                     embed_dim=self.embed_dim, mlp_dims=self.mlp_dims, dropout=self.dropout).to(self.device)
         self.optimizer = torch.optim.Adam(params=self.model.parameters(), lr=self.learning_rate, amsgrad=True, weight_decay=self.weight_decay)
-
 
     def train(self):
       # model: type, optimizer: torch.optim, train_dataloader: DataLoader, criterion: torch.nn, device: str, log_interval: int=100

@@ -186,10 +186,18 @@ class MultiLayerPerceptron(nn.Module):
 
 class _NeuralCollaborativeFiltering(nn.Module):
 
-    def __init__(self, field_dims, user_field_idx, item_field_idx, embed_dim, mlp_dims, dropout):
+    def __init__(self, field_dims, field_idx_dict, embed_dim, mlp_dims, dropout):
         super().__init__()
-        self.user_field_idx = user_field_idx
-        self.item_field_idx = item_field_idx
+        self.field_idx_dict = field_idx_dict
+        """
+        FeaturesEmbedding(field_dims, embed_dim)
+            field_dims: [유저 전체 수, 아이템 전체 수] == np.array([len(user2idx), len(isbn2idx)], dtype=np.uint32)
+            embed_dim: args.NCF_EMBED_DIM -> user_vector의 가로 길이
+                몇 k차원으로 임베딩할 것인가
+            self.embedding 통과 후: 2 * embed_dim으로 변환
+            [ 68069 149570], 16
+            68069 149570 -> 20만
+        """
         self.embedding = FeaturesEmbedding(field_dims, embed_dim)
         self.embed_output_dim = len(field_dims) * embed_dim
         self.mlp = MultiLayerPerceptron(self.embed_output_dim, mlp_dims, dropout, output_layer=False)
@@ -199,11 +207,33 @@ class _NeuralCollaborativeFiltering(nn.Module):
         """
         :param x: Long tensor of size ``(batch_size, num_user_fields)``
         """
+        
+        # print(x.shape) torch.Size([1024, (2 + context_feature 수)])
+        # user & item vector -> 임베딩
         x = self.embedding(x)
-        user_x = x[:, self.user_field_idx].squeeze(1)
-        item_x = x[:, self.item_field_idx].squeeze(1)
-        gmf = user_x * item_x
-        x = self.mlp(x.view(-1, self.embed_output_dim))
+        # print(x.shape) torch.Size([1024, (2 + context_feature 수), 16])
+        
+        # user_x = x[:, self.user_field_idx].squeeze(1)
+        # item_x = x[:, self.item_field_idx].squeeze(1)
+        # gmf = user_x * item_x
+        
+        gmf = x[:, self.field_idx_dict['user_id']].squeeze(1)
+        for field_name, field_idx in self.field_idx_dict.items():
+            if field_name == 'user_id':
+                continue
+            tmp = x[:, self.field_idx_dict[field_name]].squeeze(1)
+            gmf = (gmf * tmp)
+        
+        # MLP 통과
+        # x.shape: torch.Size([1024, (2 + context_feature 수), 16])
+        # x.view(-1, self.embed_output_dim).shape: torch.Size([1024, 32])
+        # self.mlp(x.view(-1, self.embed_output_dim)).shape: ([1024, (2 + context_feature 수)56])
+        # breakpoint()
+        # shape '[-1, 176]' is invalid for input of size 163840
+        x = x.view(-1, self.embed_output_dim)
+        # breakpoint()
+        x = self.mlp(x)
+        # breakpoint()
         x = torch.cat([gmf, x], dim=1)
         x = self.fc(x).squeeze(1)
         return x
@@ -254,31 +284,36 @@ class _DeepCrossNetworkModel(nn.Module):
         R Wang, et al. Deep & Cross Network for Ad Click Predictions, 2017.
     """
 
-    def __init__(self, n_features: int, field_idx: np.ndarray, field_dims: np.ndarray, embed_dims: np.ndarray, num_layers: int, mlp_dims: tuple, dropout: float):
+    def __init__(self, n_features: int, field_idx: np.ndarray, field_dims: np.ndarray, embed_dim: int, num_layers: int, mlp_dims: tuple, dropout: float):
         super().__init__()
         self.field_idx = field_idx
         self.dense_idx = np.delete(np.arange(n_features), self.field_idx)
-        self.embeddings = torch.nn.ModuleList([
-            torch.nn.Embedding(field_dim, embed_dim) for field_dim, embed_dim in zip(field_dims, embed_dims)
-        ])
-        # self.embedding = FeaturesEmbedding(field_dims, embed_dim)
-        self.embed_output_dim = sum(embed_dims) + n_features - len(field_idx)
-        self.cn = CrossNetwork(self.embed_output_dim, num_layers)
-        self.mlp = MultiLayerPerceptron(self.embed_output_dim, mlp_dims, dropout, output_layer=False)
-        self.cd_linear = nn.Linear(self.embed_output_dim+mlp_dims[-1], 1, bias=False)
+        # self.embeddings = torch.nn.ModuleList([
+        #     torch.nn.Embedding(field_dim, embed_dim) for field_dim, embed_dim in zip(field_dims, embed_dims)
+        # ])
+        self.embedding = FeaturesEmbedding(field_dims, embed_dim)
+        self.embed_output_dim = embed_dim*len(field_dims)
+        self.dimreduction = torch.nn.Linear(512, 32)
+        self.nn_input_dim = self.embed_output_dim + 32
+        self.cn = CrossNetwork(self.nn_input_dim, num_layers)
+        self.mlp = MultiLayerPerceptron(self.nn_input_dim, mlp_dims, dropout, output_layer=False)
+        self.cd_linear = nn.Linear(self.nn_input_dim+mlp_dims[-1], 1, bias=False)
 
     def forward(self, x: torch.Tensor):
         """
         :param x: Long tensor of size ``(batch_size, num_fields)``
         """
         x_continuous = x[:,self.dense_idx]
-        
-        embed_x = torch.cat([self.embeddings[i](x[:,idx]) for i, idx in enumerate(self.field_idx)], dim=1)
-        x_cat = torch.cat([embed_x, x_continuous], dim=1)
+        x_continuous = self.dimreduction(x_continuous)
+        x_sparse = x[:,self.field_idx].long()
+        x_embed = self.embedding(x_sparse).view(-1, self.embed_output_dim)
+        # embed_x = torch.cat([self.embeddings[i](x[:,idx]) for i, idx in enumerate(self.field_idx)], dim=1)
+        x_cat = torch.cat([x_embed, x_continuous], dim=1)
         # embed_x = self.embedding(x_field).view(-1, self.embed_output_dim)
         x_cross = self.cn(x_cat)
         x_dnn = self.mlp(x_cat)
         p = self.cd_linear(torch.cat([x_cross, x_dnn], dim=1))
+        
         return p.squeeze(1)
 
 ############################# DeepFM
