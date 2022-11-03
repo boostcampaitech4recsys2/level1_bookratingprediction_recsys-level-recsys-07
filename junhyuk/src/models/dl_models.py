@@ -180,6 +180,8 @@ class WideAndDeepModel:
         self.valid_dataloader = data['valid_dataloader']
         self.field_dims = data['field_dims']
 
+        self.field_idx_dict = data['field_name_dim_dict']
+        
         self.embed_dim = args.WDN_EMBED_DIM
         self.epochs = args.EPOCHS
         self.learning_rate = args.LR
@@ -191,7 +193,7 @@ class WideAndDeepModel:
         self.mlp_dims = args.WDN_MLP_DIMS
         self.dropout = args.WDN_DROPOUT
 
-        self.model = _WideAndDeepModel(self.field_dims, self.embed_dim, mlp_dims=self.mlp_dims, dropout=self.dropout).to(self.device)
+        self.model = _WideAndDeepModel(self.field_dims, field_idx_dict=self.field_idx_dict, embed_dim=self.embed_dim, mlp_dims=self.mlp_dims, dropout=self.dropout).to(self.device)
         self.optimizer = torch.optim.Adam(params=self.model.parameters(), lr=self.learning_rate, amsgrad=True, weight_decay=self.weight_decay)
 
 

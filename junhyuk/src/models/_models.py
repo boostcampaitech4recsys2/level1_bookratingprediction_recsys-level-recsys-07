@@ -251,19 +251,31 @@ class _NeuralCollaborativeFiltering(nn.Module):
 # 더 단순하네?
 class _WideAndDeepModel(nn.Module):
 
-    def __init__(self, field_dims: np.ndarray, embed_dim: int, mlp_dims: tuple, dropout: float):
+    def __init__(self, field_dims: np.ndarray, field_idx_dict:dict, embed_dim: int, mlp_dims: tuple, dropout: float):
         super().__init__()
+        self.field_idx_dict = field_idx_dict
         self.linear = FeaturesLinear(field_dims)
         self.embedding = FeaturesEmbedding(field_dims, embed_dim)
         self.embed_output_dim = len(field_dims) * embed_dim
         self.mlp = MultiLayerPerceptron(self.embed_output_dim, mlp_dims, dropout)
+        self.ffm = FieldAwareFactorizationMachine(field_dims, embed_dim)
 
     def forward(self, x: torch.Tensor):
         """
         :param x: Long tensor of size ``(batch_size, num_fields)``
         """
+        # x.shape : torch.Size([1024, 16])
+        # breakpoint()
+        # self.embedding(x).shape
+        # torch.Size([1024, 16, 16])
+        ffm_term = torch.sum(self.ffm(x), dim=1)
+        
+        
+        
+        ffm_term = torch.sum(torch.sum(self.ffm(x), dim=1), dim=1, keepdim=True)
         embed_x = self.embedding(x)
-        x = self.linear(x) + self.mlp(embed_x.view(-1, self.embed_output_dim))
+        x = self.linear(x) + ffm_term
+        x = x + self.mlp(embed_x.view(-1, self.embed_output_dim))
         return x.squeeze(1)
 
 class CrossNetwork(nn.Module):

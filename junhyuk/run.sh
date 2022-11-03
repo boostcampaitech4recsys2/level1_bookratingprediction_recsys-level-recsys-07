@@ -2,7 +2,7 @@
 # python3 main.py --MODEL FFM
 # python3 main.py --MODEL NCF
 # python3 main.py --EPOCHS 1 --TEST_SIZE 1e-100 --MODEL NCF
-python3 main.py --EPOCHS 6 --MODEL WDN
+# python3 main.py --EPOCHS 6 --MODEL WDN
 # python3 main.py --EPOCHS 20 --MODEL DCN
 # python3 main.py --MODEL CNN_FM
 
@@ -19,4 +19,4 @@ python3 main.py --EPOCHS 6 --MODEL WDN
 #     return " ".join(df[df['user_id'] == user_id].sort_values(by='summary_length', ascending=False)['summary'].values[:max_summary])
 
 # python ensemble.py --ENSEMBLE_FILES 20221027_012536_NCF,DCN_2.1816_msk,20221101_145823_WDN --ENSEMBLE_STRATEGY WEIGHTED --ENSEMBLE_WEIGHT 0.40,0.5,0.1
-# python ensemble.py --ENSEMBLE_FILES ensemble_2.1643,DCN_msk,DCN_msk2 --ENSEMBLE_STRATEGY WEIGHTED --ENSEMBLE_WEIGHT 0.7,0.15,0.15
+python ensemble.py --ENSEMBLE_FILES ensemble_2.1643,ensemble_2.1659,ensemble_2.1608 --ENSEMBLE_STRATEGY WEIGHTED --ENSEMBLE_WEIGHT 0.3,0.3,0.4
