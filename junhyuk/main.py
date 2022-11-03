@@ -127,7 +127,8 @@ if __name__ == "__main__":
         book_author_over10,book_author_over50,book_author_over100
     """
     
-    arg('--ADD_CONTEXT', type=list, default=['isbn', 'category_high', 'new_language','book_author_over50','book_author_over10', 'book_author_over100','book_author_over3','book_author_over5','publisher',\
+    arg('--ADD_CONTEXT', type=list, default=['isbn', 'category_high', 'new_language','book_author_over50','book_author_over10',\
+        'book_author_over100','book_author_over3','book_author_over5','publisher',\
         'year_of_publication','remove_country_code'], help='context 선택이 가능합니다.')
     
     ############### TRAINING OPTION
