@@ -293,8 +293,8 @@ class _DeepCrossNetworkModel(nn.Module):
         # ])
         self.embedding = FeaturesEmbedding(field_dims, embed_dim)
         self.embed_output_dim = embed_dim*len(field_dims)
-        self.dimreduction = torch.nn.Linear(512, 32)
-        self.nn_input_dim = self.embed_output_dim + 32
+        # self.dimreduction = torch.nn.Linear(512, 256)
+        self.nn_input_dim = self.embed_output_dim + n_features - len(self.field_idx)
         self.cn = CrossNetwork(self.nn_input_dim, num_layers)
         self.mlp = MultiLayerPerceptron(self.nn_input_dim, mlp_dims, dropout, output_layer=False)
         self.cd_linear = nn.Linear(self.nn_input_dim+mlp_dims[-1], 1, bias=False)
@@ -304,7 +304,7 @@ class _DeepCrossNetworkModel(nn.Module):
         :param x: Long tensor of size ``(batch_size, num_fields)``
         """
         x_continuous = x[:,self.dense_idx]
-        x_continuous = self.dimreduction(x_continuous)
+        # x_continuous = self.dimreduction(x_continuous)
         x_sparse = x[:,self.field_idx].long()
         x_embed = self.embedding(x_sparse).view(-1, self.embed_output_dim)
         # embed_x = torch.cat([self.embeddings[i](x[:,idx]) for i, idx in enumerate(self.field_idx)], dim=1)

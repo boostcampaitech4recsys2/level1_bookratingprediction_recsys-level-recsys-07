@@ -6,6 +6,21 @@ import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader, Dataset
 
+def age_map(x: int) -> int:
+        x = int(x)
+        if x < 20:
+            return 1
+        elif x >= 20 and x < 30:
+            return 2
+        elif x >= 30 and x < 40:
+            return 3
+        elif x >= 40 and x < 50:
+            return 4
+        elif x >= 50 and x < 60:
+            return 5
+        else:
+            return 6
+
 def preprocess_age(users:pd.DataFrame):
     if not isinstance(users, pd.DataFrame):
         raise Exception(f"Error at {inspect.currentframe().f_code.co_name}\nnot pd.DataFrame")
@@ -86,21 +101,40 @@ def preprocess_publisher(books:pd.DataFrame):
                 pass
         return books
 
-def users2idx(context_df, train_df, test_df, feature2idx:dict):
-    def age_map(x: int) -> int:
-        x = int(x)
-        if x < 20:
-            return 1
-        elif x >= 20 and x < 30:
-            return 2
-        elif x >= 30 and x < 40:
-            return 3
-        elif x >= 40 and x < 50:
-            return 4
-        elif x >= 50 and x < 60:
-            return 5
+def feat2idx(context_df, train_df, test_df, feature2idx:dict, use_embedding=False):
+    if not isinstance(context_df, pd.DataFrame) or not isinstance(train_df, pd.DataFrame) or \
+        not isinstance(test_df, pd.DataFrame):
+        raise Exception(f"Error at {inspect.currentframe().f_code.co_name}\nnot pd.DataFrame")
+    
+    else:
+        context_df['age'] = context_df['age'].fillna(int(context_df['age'].mean()))
+        context_df['age'] = context_df['age'].apply(age_map)
+        train_df['age'] = train_df['age'].fillna(int(train_df['age'].mean()))
+        train_df['age'] = train_df['age'].apply(age_map)
+        test_df['age'] = test_df['age'].fillna(int(test_df['age'].mean()))
+        test_df['age'] = test_df['age'].apply(age_map)
+        if use_embedding:
+            for feature_name in context_df.columns[:-512]:
+                if feature_name == 'rating' or feature_name == 'isbn' or feature_name == 'user_id':
+                    continue
+                else:
+                    idx_name = feature_name + '2idx'
+                    feature2idx[idx_name] = {v:k for k,v in enumerate(context_df[feature_name].unique())}
+                    train_df[feature_name] = train_df[feature_name].map(feature2idx[idx_name])
+                    test_df[feature_name] = test_df[feature_name].map(feature2idx[idx_name])
         else:
-            return 6
+            for feature_name in context_df.columns:
+                if feature_name == 'rating' or feature_name == 'isbn' or feature_name == 'user_id':
+                    continue
+                else:
+                    idx_name = feature_name + '2idx'
+                    feature2idx[idx_name] = {v:k for k,v in enumerate(context_df[feature_name].unique())}
+                    train_df[feature_name] = train_df[feature_name].map(feature2idx[idx_name])
+                    test_df[feature_name] = test_df[feature_name].map(feature2idx[idx_name])
+        return feature2idx, train_df, test_df
+        
+def users2idx(context_df, train_df, test_df, feature2idx:dict):
+    
     if not isinstance(context_df, pd.DataFrame) or not isinstance(train_df, pd.DataFrame) or \
         not isinstance(test_df, pd.DataFrame):
         raise Exception(f"Error at {inspect.currentframe().f_code.co_name}\nnot pd.DataFrame")

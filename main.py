@@ -128,6 +128,19 @@ if __name__ == "__main__":
     arg('--LR', type=float, default=1e-3, help='Learning Rate를 조정할 수 있습니다.')
     arg('--WEIGHT_DECAY', type=float, default=1e-6, help='Adam optimizer에서 정규화에 사용하는 값을 조정할 수 있습니다.')
     arg('--PATIENCE_LIMIT', type=int, default=10, help='early_stopping limit 값을 조정할 수 있습니다.')
+    # books
+    # #  'isbn',
+    # 'category', 'year_of_publication', 'publisher',' language','img_path'
+    #  'category_high', 'new_year', 'publisher_small', 'new_language', 
+    # 'isfiction', 'isenglish',
+    # 'book_author', 'book_author_over3','book_author_over5','book_author_over10','book_author_over50', 'book_author_over100',
+    # 'user_power', 'book_popularity',        
+    # 'remove_country_code',
+    
+    arg('--ADD_CONTEXT', nargs='+', type=str, default=['isbn','category', 'year_of_publication', 'publisher','language',\
+     'category_high', 'new_year', 'publisher_small', 'new_language', \
+    'isfiction', 'isenglish',\
+    'book_author', 'book_author_over3','book_author_over5','book_author_over10','book_author_over50', 'book_author_over100',], help='context 선택이 가능합니다.')
 
     ############### GPU
     arg('--DEVICE', type=str, default='cuda', choices=['cuda', 'cpu'], help='학습에 사용할 Device를 조정할 수 있습니다.')
@@ -149,8 +162,8 @@ if __name__ == "__main__":
     arg('--WDN_DROPOUT', type=float, default=0.2, help='WDN에서 Dropout rate를 조정할 수 있습니다.')
 
     ############### DCN
-    arg('--DCN_EMBED_DIM', type=int, default=4, help='DCN에서 embedding시킬 차원을 조정할 수 있습니다.')
-    arg('--DCN_MLP_DIMS', type=list, default=(8, 8, 8, 8), help='DCN에서 MLP Network의 차원을 조정할 수 있습니다.')
+    arg('--DCN_EMBED_DIM', type=int, default=16, help='DCN에서 embedding시킬 차원을 조정할 수 있습니다.')
+    arg('--DCN_MLP_DIMS', type=list, default=(256, 256), help='DCN에서 MLP Network의 차원을 조정할 수 있습니다.')
     arg('--DCN_DROPOUT', type=float, default=0.2, help='DCN에서 Dropout rate를 조정할 수 있습니다.')
     arg('--DCN_NUM_LAYERS', type=int, default=3, help='DCN에서 Cross Network의 레이어 수를 조정할 수 있습니다.')
 
