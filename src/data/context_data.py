@@ -164,9 +164,12 @@ def context_data_load(args):
     idx, context_train, context_test = process_context_data(users, books, train, test, args.ADD_CONTEXT)
     n_features = context_train.shape[1]-1
     field_dims = np.array([len(user2idx), len(isbn2idx)], dtype=np.uint32)
+    field_idx = np.array([0,1], dtype=np.uint32)
     for idx_name in idx.keys():
         field_dims = np.append(field_dims, len(idx[idx_name]))
-    field_idx = np.arange(len(field_dims))
+        field_idx = np.append(field_idx, list(context_train.drop('rating',axis=1).columns).index(idx_name[:-4]))
+    
+    
     # drop_features = [
     #             # users
     #                 #  'user_id', 
@@ -245,9 +248,9 @@ def context_data_split(args, data):
     return data
 
 def context_data_loader(args, data):
-    train_dataset = TensorDataset(torch.FloatTensor(data['X_train'].values), torch.FloatTensor(data['y_train'].values))
-    valid_dataset = TensorDataset(torch.FloatTensor(data['X_valid'].values), torch.FloatTensor(data['y_valid'].values))
-    test_dataset = TensorDataset(torch.FloatTensor(data['test'].values))
+    train_dataset = TensorDataset(torch.LongTensor(data['X_train'].values), torch.LongTensor(data['y_train'].values))
+    valid_dataset = TensorDataset(torch.LongTensor(data['X_valid'].values), torch.LongTensor(data['y_valid'].values))
+    test_dataset = TensorDataset(torch.LongTensor(data['test'].values))
 
     train_dataloader = DataLoader(train_dataset, batch_size=args.BATCH_SIZE, shuffle=args.DATA_SHUFFLE)
     valid_dataloader = DataLoader(valid_dataset, batch_size=args.BATCH_SIZE, shuffle=args.DATA_SHUFFLE)

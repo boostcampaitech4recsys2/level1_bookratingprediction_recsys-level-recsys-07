@@ -21,9 +21,9 @@ def main(args):
 
     ######################## DATA LOAD
     print(f'--------------- {args.MODEL} Load Data ---------------')
-    if args.MODEL in ('FM', 'FFM', 'DFM','DCN'):
+    if args.MODEL in ('FM', 'FFM', 'DFM','DCN', 'WDN'):
         data = context_data_load(args)
-    elif args.MODEL in ('NCF', 'WDN'):
+    elif args.MODEL in ('NCF'):
         data = dl_data_load(args)
     elif args.MODEL == 'CNN_FM':
         data = image_data_load(args)
@@ -36,11 +36,11 @@ def main(args):
 
     ######################## Train/Valid Split
     print(f'--------------- {args.MODEL} Train/Valid Split ---------------')
-    if args.MODEL in ('FM', 'FFM', 'DFM', 'DCN'):
+    if args.MODEL in ('FM', 'FFM', 'DFM', 'DCN', 'WDN'):
         data = context_data_split(args, data)
         data = context_data_loader(args, data)
 
-    elif args.MODEL in ('NCF', 'WDN'):
+    elif args.MODEL in ('NCF'):
         data = dl_data_split(args, data)
         data = dl_data_loader(args, data)
 
@@ -137,10 +137,17 @@ if __name__ == "__main__":
     # 'user_power', 'book_popularity',        
     # 'remove_country_code',
     
-    arg('--ADD_CONTEXT', nargs='+', type=str, default=['isbn','category', 'year_of_publication', 'publisher','language',\
-     'category_high', 'new_year', 'publisher_small', 'new_language', \
-    'isfiction', 'isenglish',\
-    'book_author', 'book_author_over3','book_author_over5','book_author_over10','book_author_over50', 'book_author_over100',], help='context 선택이 가능합니다.')
+    # ['isbn','category', 'year_of_publication', 'publisher','language',\
+    #  'category_high', 'new_year', 'publisher_small', 'new_language', \
+    # 'isfiction', 'isenglish',\
+    # 'book_author', 'book_author_over3','book_author_over5','book_author_over10','book_author_over50', 'book_author_over100',]
+    
+    arg('--ADD_CONTEXT', nargs='+', type=str, default=['isbn',
+    #  'category_high', 'new_language', \
+    # 'isfiction', 'isenglish',\
+    ], help='context 선택이 가능합니다.')
+
+# dict_keys(['user_power2idx', 'book_popularity2idx', 'age2idx', 'location_city2idx', 'location_state2idx', 'location_country2idx', 'count_x2idx', 'mean_x2idx', 'median_x2idx', 'std_x2idx', 'category2idx', 'year_of_publication2idx', 'publisher2idx', 'language2idx', 'category_high2idx', 'new_year2idx', 'publisher_small2idx', 'new_language2idx', 'isfiction2idx', 'isenglish2idx', 'book_author2idx', 'book_author_over32idx', 'book_author_over52idx', 'book_author_over102idx', 'book_author_over502idx', 'book_author_over1002idx', 'count_y2idx', 'mean_y2idx', 'median_y2idx', 'std_y2idx'])
 
     ############### GPU
     arg('--DEVICE', type=str, default='cuda', choices=['cuda', 'cpu'], help='학습에 사용할 Device를 조정할 수 있습니다.')
@@ -158,7 +165,7 @@ if __name__ == "__main__":
 
     ############### WDN
     arg('--WDN_EMBED_DIM', type=int, default=16, help='WDN에서 embedding시킬 차원을 조정할 수 있습니다.')
-    arg('--WDN_MLP_DIMS', type=list, default=(16, 16), help='WDN에서 MLP Network의 차원을 조정할 수 있습니다.')
+    arg('--WDN_MLP_DIMS', type=list, default=(256, 256), help='WDN에서 MLP Network의 차원을 조정할 수 있습니다.')
     arg('--WDN_DROPOUT', type=float, default=0.2, help='WDN에서 Dropout rate를 조정할 수 있습니다.')
 
     ############### DCN

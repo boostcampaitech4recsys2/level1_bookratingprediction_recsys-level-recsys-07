@@ -101,7 +101,7 @@ def preprocess_publisher(books:pd.DataFrame):
                 pass
         return books
 
-def feat2idx(context_df, train_df, test_df, feature2idx:dict, use_embedding=False):
+def feat2idx(context_df, train_df, test_df, feature2idx:dict, use_embedding=False, dense_features=[]):
     if not isinstance(context_df, pd.DataFrame) or not isinstance(train_df, pd.DataFrame) or \
         not isinstance(test_df, pd.DataFrame):
         raise Exception(f"Error at {inspect.currentframe().f_code.co_name}\nnot pd.DataFrame")
@@ -123,7 +123,10 @@ def feat2idx(context_df, train_df, test_df, feature2idx:dict, use_embedding=Fals
                     train_df[feature_name] = train_df[feature_name].map(feature2idx[idx_name])
                     test_df[feature_name] = test_df[feature_name].map(feature2idx[idx_name])
         else:
-            for feature_name in context_df.columns:
+            cate = list(context_df.columns)
+            for f in dense_features:
+                cate.remove(f)
+            for feature_name in cate:
                 if feature_name == 'rating' or feature_name == 'isbn' or feature_name == 'user_id':
                     continue
                 else:
