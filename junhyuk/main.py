@@ -131,7 +131,7 @@ if __name__ == "__main__":
         'year_of_publication','remove_country_code'], help='context 선택이 가능합니다.')
     
     ############### TRAINING OPTION
-    arg('--BATCH_SIZE', type=int, default=64, help='Batch size를 조정할 수 있습니다.')
+    arg('--BATCH_SIZE', type=int, default=1024, help='Batch size를 조정할 수 있습니다.')
     arg('--EPOCHS', type=int, default=10, help='Epoch 수를 조정할 수 있습니다.')
     arg('--LR', type=float, default=1e-3, help='Learning Rate를 조정할 수 있습니다.')
     arg('--WEIGHT_DECAY', type=float, default=1e-6, help='Adam optimizer에서 정규화에 사용하는 값을 조정할 수 있습니다.')
