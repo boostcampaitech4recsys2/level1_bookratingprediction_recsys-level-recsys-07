@@ -4,6 +4,8 @@ import numpy as np
 from src.ensembles.ensembles import Ensemble
 import argparse
 
+from sklearn.metrics import mean_squared_error
+
 def main(args):
     file_list = sum(args.ENSEMBLE_FILES, [])
     
@@ -29,6 +31,15 @@ def main(args):
     files_title = '-'.join(file_list)
 
     output.to_csv(f'{args.RESULT_PATH}{files_title}-{strategy_title}.csv',index=False)
+
+    ## 우석 - 기존 ratings와 비교하여 rmse 출력
+    y_true = pd.read_csv('test_ratings_2.csv')['rating'].values
+    try:
+        rmse = mean_squared_error(y_true - result, squared=False)
+        print('#'*30, f'  ensemble - RMSE : {rmse:.5f}   ', '#'*30 )
+    except:
+        print('### 오류 : 현재 새로운 train, test로 진행하지 않았습니다. ###')
+    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='parser')
