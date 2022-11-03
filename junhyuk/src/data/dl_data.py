@@ -28,8 +28,10 @@ def process_context_data(users, books, ratings1, ratings2, features_name:list):
     # age, location 전처리
     users = preprocess_location(preprocess_age(users))
     ratings = pd.concat([ratings1, ratings2]).reset_index(drop=True)
+    # users = users.dropna()
+    # books = books.dropna()
 
-    print(type(features_name))
+    # print(type(features_name))
     
     # 인덱싱 처리된 데이터 조인
     """
@@ -44,6 +46,7 @@ def process_context_data(users, books, ratings1, ratings2, features_name:list):
         new_language,remove_country_code,book_author_over3,book_author_over5,
         book_author_over10,book_author_over50,book_author_over100
     """
+    # breakpoint()
     # user_id, isbn, age, city, state, country, category_high, publisher_4_digit, language, author_10
     # context_df = ratings.merge(users, on='user_id', how='left').merge(books[features_name], on='isbn', how='left')
     context_df = ratings.merge(users, on='user_id', how='left').merge(books[features_name], on='isbn', how='left')

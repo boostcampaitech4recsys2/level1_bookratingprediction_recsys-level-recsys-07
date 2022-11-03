@@ -33,7 +33,7 @@ def main(args):
     output.to_csv(f'{args.RESULT_PATH}{files_title}-{strategy_title}.csv',index=False)
 
     ## 우석 - 기존 ratings와 비교하여 rmse 출력
-    y_true = pd.read_csv('test_ratings_2.csv')['rating'].values
+    y_true = pd.read_csv('./data/test_ratings_2.csv')['rating'].values
     # try:
     rmse = mean_squared_error(y_true, result, squared=False)
     print('#'*30, f'  ensemble - RMSE : {rmse:.5f}   ', '#'*30 )

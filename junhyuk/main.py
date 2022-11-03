@@ -113,8 +113,8 @@ if __name__ == "__main__":
     arg('--MODEL', type=str, choices=['FM', 'FFM', 'NCF', 'WDN', 'DCN', 'CNN_FM', 'DeepCoNN'],
                                 help='학습 및 예측할 모델을 선택할 수 있습니다.')
     arg('--DATA_SHUFFLE', type=bool, default=True, help='데이터 셔플 여부를 조정할 수 있습니다.')
-    arg('--TEST_SIZE', type=float, default=0.2, help='Train/Valid split 비율을 조정할 수 있습니다.')
-    arg('--SEED', type=int, default=42, help='seed 값을 조정할 수 있습니다.')
+    arg('--TEST_SIZE', type=float, default=0.1, help='Train/Valid split 비율을 조정할 수 있습니다.')
+    arg('--SEED', type=int, default=43432, help='seed 값을 조정할 수 있습니다.')
     
     ############### ADD CONTEXT ###############
     # arg('--ADD_CONTEXT', type=list, default=['isbn', 'category_high', 'publisher', 'new_language','book_author_over10', 'book_author_over100'], help='context 선택이 가능합니다.')
@@ -127,7 +127,9 @@ if __name__ == "__main__":
         book_author_over10,book_author_over50,book_author_over100
     """
     
-    arg('--ADD_CONTEXT', type=list, default=['isbn', 'category_high', 'new_language','book_author_over50','book_author_over10', 'book_author_over100','book_author_over3','book_author_over5','publisher',\
+    arg('--ADD_CONTEXT', type=list, default=['isbn', 'category_high', 'new_language',\
+        'book_author_over50','book_author_over10', 'book_author_over100','book_author_over3',\
+            'book_author_over5','publisher',\
         'year_of_publication','remove_country_code'], help='context 선택이 가능합니다.')
     
     ############### TRAINING OPTION
