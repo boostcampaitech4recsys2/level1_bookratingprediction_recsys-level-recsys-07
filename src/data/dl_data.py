@@ -65,6 +65,7 @@ def dl_data_load(args):
     features_name = args.ADD_CONTEXT
     
     users = pd.read_csv(args.DATA_PATH + 'users_preprocessed.csv')
+    # users = pd.read_csv(args.DATA_PATH + 'users.csv')
     """
     books_merged:
         dataframe
@@ -73,7 +74,7 @@ def dl_data_load(args):
         new_language,remove_country_code,book_author_over3,book_author_over5,
         book_author_over10,book_author_over50,book_author_over100
     """
-    books = pd.read_csv(args.DATA_PATH + 'books_merged.csv')
+    books = pd.read_csv(args.DATA_PATH + 'books.csv')
     train = pd.read_csv(args.DATA_PATH + 'train_ratings.csv')
     test = pd.read_csv(args.DATA_PATH + 'test_ratings.csv')
     sub = pd.read_csv(args.DATA_PATH + 'sample_submission.csv')
