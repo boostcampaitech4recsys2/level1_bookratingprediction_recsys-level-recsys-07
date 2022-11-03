@@ -99,7 +99,7 @@ def main(args):
     now_date = time.strftime('%Y%m%d', now)
     now_hour = time.strftime('%X', now)
     save_time = now_date + '_' + now_hour.replace(':', '')
-    submission.to_csv('submit/{}_{}_kjh.csv'.format(save_time, args.MODEL), index=False)
+    submission.to_csv('NCF_final_KJH.csv'.format(save_time, args.MODEL), index=False)
 
 
 
