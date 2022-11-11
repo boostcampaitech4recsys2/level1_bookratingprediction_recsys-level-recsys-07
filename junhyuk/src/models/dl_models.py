@@ -103,6 +103,7 @@ class NeuralCollaborativeFiltering:
             tk0 = tqdm.tqdm(self.train_dataloader, smoothing=0, mininterval=1.0)
             for i, (fields, target) in enumerate(tk0):
                 fields, target = fields.to(self.device), target.to(self.device)
+                # breakpoint()
                 y = self.model(fields)
                 loss = self.criterion(y, target.float())
                 self.model.zero_grad()
@@ -134,7 +135,8 @@ class NeuralCollaborativeFiltering:
                 print(f"train acc: {train_rmse_score}, train loss: {train_loss}")
                 print(f"valid acc: {valid_rmse_score}, valid loss: {valid_loss}")
             sum_time += elapsed
-            
+        ######################## SAVE MODEL
+        torch.save(self.model, './models/NCF_model.pt') 
         print(f"train done! elapsed: {sum_time}")
         
         log_df = pd.DataFrame({'train loss': train_loss_list,\

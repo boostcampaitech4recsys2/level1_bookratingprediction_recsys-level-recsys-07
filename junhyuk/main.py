@@ -14,6 +14,7 @@ from src import NeuralCollaborativeFiltering, WideAndDeepModel, DeepCrossNetwork
 from src import CNN_FM
 from src import DeepCoNN
 
+import torch
 
 def main(args):
     seed_everything(args.SEED)

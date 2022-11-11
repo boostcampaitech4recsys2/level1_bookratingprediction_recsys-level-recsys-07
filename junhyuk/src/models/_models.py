@@ -217,11 +217,9 @@ class _NeuralCollaborativeFiltering(nn.Module):
         """
         :param x: Long tensor of size ``(batch_size, num_user_fields)``
         """
-        
-        # print(x.shape) torch.Size([1024, (2 + context_feature 수)])
-        # user & item vector -> 임베딩
+        # x.shape : torch.Size([1024, (2 + context_feature 수)])
         x = self.embedding(x)
-        # print(x.shape) torch.Size([1024, (2 + context_feature 수), 16])
+        # x.shape : torch.Size([1024, (2 + context_feature 수), 임베딩 차원])
         
         # user_x = x[:, self.user_field_idx].squeeze(1)
         # item_x = x[:, self.item_field_idx].squeeze(1)
